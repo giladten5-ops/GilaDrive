@@ -8,6 +8,7 @@ const { listFilePermissions: listFilePermissions,
   removePermission } = require("./permissions");
 const UserSchema = require("./UserSchema");
 const FileSchema = require("./FileSchema");
+const mongoose = require("mongoose");
 
 
 async function getFileMetadata(id) {
@@ -54,19 +55,48 @@ async function listFiles (userId, parentId = null, view = null) {
     }).populate('ownerId', 'username');  
   }
   if (view === "recent") {
-    return await FileSchema.find({
-      $or: [
-        { ownerId: userId },
-        { _id: { $in: sharedFileIds } }
-      ],
-      isTrashed: false
-    })
-    .sort({ 
-      $expr: { $max: [ "$lastOpenedTime", "$lastUpdateTime" ] } 
-    })
-    .limit(10)
-    .populate('ownerId', 'username');  
-  }
+    // Use aggregation to compute lastActivity and sort
+  const results = await FileSchema.aggregate([
+    {
+      $match: {
+        $or: [
+          { ownerId: new mongoose.Types.ObjectId(userId) }, // Ensure userId is an ObjectId
+          { _id: { $in: sharedFileIds } }
+        ],
+        isTrashed: false
+      }
+    },
+    {
+      $addFields: {
+        lastActivity: { $max: ["$lastOpenedTime", "$lastUpdateTime"] }
+      }
+    },
+    { $sort: { lastActivity: -1 } },
+    { $limit: 10 },
+    {
+      $lookup: {
+        from: "users", 
+        localField: "ownerId",
+        foreignField: "_id",
+        as: "ownerDoc" // Use a temporary name to avoid confusion
+      }
+    },
+    { $unwind: "$ownerDoc" }
+  ]);
+
+  // Map results to include isStarred and proper owner structure
+  return results.map(file => ({
+    ...file,
+    id: file._id.toString(),
+    name: file.filename, // Map filename to name
+    ownerId: {
+      _id: file.ownerDoc._id,
+      username: file.ownerDoc.username
+    },
+    // Recalculate isStarred for the UI
+    isStarred: (file.starredBy || []).some(uid => uid.toString() === userId.toString())
+  }));
+}
   if (view === "shared") {
     if (parentId) {
       const children = await FileSchema.find({ parentId, isTrashed: false }).populate('ownerId', 'username');
@@ -151,7 +181,8 @@ async function createFile({ name, ownerId, ownerName, type, parentId, content })
   }
 
   const normalizedType = type === "folder" ? "folder" : "file";
-  const resolvedOwnerName = ownerName ?? usersModel.getUserById(ownerId)?.username ?? null;
+  const user = await usersModel.getUserById(ownerId);
+  const resolvedOwnerName = ownerName ?? user?.username ?? null;
 
   const newFile = new FileSchema({
     filename: name.trim(),
@@ -239,13 +270,18 @@ async function searchFiles(query, userId) {
     //fetch all non-trashed files
     const allFiles = await FileSchema.find({ isTrashed: false });
 
-    // Filter files to those the user has read access to
-    const allowedFiles = [];
-    for (const file of allFiles) {
-      if (await checkUserPermission(file._id, userId, 'read')) {
-        allowedFiles.push(file);
-      }
-    }
+    // Filter files to those the user has read access to, running checks in parallel
+   const permChecks = await Promise.all(
+      allFiles.map(async (file) => ({
+        file,
+        hasAccess: await checkUserPermission(file._id, userId, "read"),
+    }))
+  );
+
+    const allowedFiles = permChecks
+      .filter(({ hasAccess }) => hasAccess)
+      .map(({ file }) => file);
+    
 
     // Request backend search and split results to array of physical IDs
     const cppResponse = await sendRequest(`SEARCH ${query}`);

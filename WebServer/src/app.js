@@ -32,7 +32,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/tokens", tokensRoutes);
 // routes for logged in users only
 app.use("/api/files", auth.verifyToken, filesRoutes);
-app.use("/api/search", searchRoutes);
+app.use("/api/search",auth.verifyToken, searchRoutes);
 
 // 404 JSON for /api/*
 app.use((req, res) => {
