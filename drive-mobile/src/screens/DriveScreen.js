@@ -17,31 +17,38 @@ import { colors } from "../ui/tokens";
 export default function DriveScreen() {
   const { logout } = useAuth();
 
-const [activeView, setActiveView] = useState("home"); // home | starred | shared | recent | trash | my-drive
+  // 'activeView' tracks which tab we are on (Home, Starred, etc.)
+  const [activeView, setActiveView] = useState("home"); 
+  // 'parentId' is the ID of the folder we are currently looking inside
   const [parentId, setParentId] = useState("");
+  // 'crumbs' is an array that tracks our folder path: [{id: "", name: "My Drive"}, {id: "123", name: "Photos"}]
   const [crumbs, setCrumbs] = useState([{ id:"", name: "My Drive" }]);
 
-  const [viewMode, setViewMode] = useState("grid"); // default grid like screenshot
+  const [viewMode, setViewMode] = useState("grid"); // Switches between Card view and List view
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const [q, setQ] = useState("");
-  const [searchMode, setSearchMode] = useState(false);
+  const [q, setQ] = useState(""); // The current search text
+  const [searchMode, setSearchMode] = useState(false); // Are we looking at search results or a folder?
 
+  // 'selected' stores the file/folder the user just tapped on to see details
   const [selected, setSelected] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(""); // The text inside a file
   const [contentError, setContentError] = useState("");
 
+  // 'requestId' prevents "Race Conditions" (e.g. clicking two files quickly and showing the wrong content)
   const requestId = useRef(0);
 
+  // 'filters' computes what we send to the API based on the view and folder we are in
   const filters = useMemo(() => {
     const pid = typeof parentId === "string" && parentId.trim() === "" ? null : parentId;
     if (activeView === "home") return { parentId: parentId ?? "" };
     return { view: activeView, parentId: parentId ?? "" };
   }, [activeView, parentId]);
 
+  // Fetches the list of files from the server
   async function refresh() {
     setErr("");
     setLoading(true);
@@ -55,6 +62,7 @@ const [activeView, setActiveView] = useState("home"); // home | starred | shared
     }
   }
 
+  // Every time the user changes tabs or enters a folder, refresh the list
   useEffect(() => {
     setSearchMode(false);
     setQ("");
@@ -63,20 +71,23 @@ const [activeView, setActiveView] = useState("home"); // home | starred | shared
   }, [activeView, parentId]);
 
   async function openItem(item) {
+    // If it's a folder, we don't open a modal; we just "enter" it by updating parentId
     if (item.type === "folder") {
       setParentId(item.id);
       setCrumbs((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
     }
 
+    // If it's a file, we open the details modal and fetch its content
     setSelected(item);
     setDetailsOpen(true);
     setContent("");
     setContentError("");
 
-    const id = ++requestId.current;
+    const id = ++requestId.current; // Increment request ID for this specific fetch
     try {
       const data = await getFile(item.id);
+      // Only update state if this is still the "current" request
       if (requestId.current !== id) return;
       setContent(data?.content ?? "");
     } catch (e) {
@@ -85,8 +96,10 @@ const [activeView, setActiveView] = useState("home"); // home | starred | shared
     }
   }
 
+  // When a user clicks a breadcrumb (e.g. clicking "My Drive" while inside "Photos")
   function onCrumbPress(idx) {
     const target = crumbs[idx];
+    // Slice the crumbs array to remove everything after the clicked folder
     setCrumbs((prev) => prev.slice(0, idx + 1));
     setParentId(target.id ?? null);
   }
@@ -110,15 +123,19 @@ const [activeView, setActiveView] = useState("home"); // home | starred | shared
     }
   }
 
+  // Handles Starring/Unstarring and updates the local list so the UI changes instantly
   async function toggleStar() {
     if (!selected) return;
     try {
       if (selected.starred) await unstarFile(selected.id);
       else await starFile(selected.id);
 
+      // Update the "selected" item state
       setSelected((s) => (s ? { ...s, starred: !s.starred } : s));
+      // Update the item inside the big list so the star icon changes there too
       setItems((prev) => prev.map((x) => (x.id === selected.id ? { ...x, starred: !x.starred } : x)));
 
+      // If we are in the "Starred" tab, refresh the list since an item might need to disappear
       if (activeView === "starred") refresh();
     } catch (e) {
       setErr(e?.message || "Failed to update star");
@@ -131,21 +148,23 @@ const [activeView, setActiveView] = useState("home"); // home | starred | shared
       await deleteFile(selected.id);
       setDetailsOpen(false);
       setSelected(null);
-      refresh();
+      refresh(); // Reload list to show the item is gone
     } catch (e) {
       setErr(e?.message || "Failed to delete");
     }
   }
 
-function setViewFromBottomTab(key) {
-  setActiveView(key);
-  setParentId(null);
-  setCrumbs([{ id: null, name: "My Drive" }]);
-}
+  // Reset navigation states when switching main tabs at the bottom
+  function setViewFromBottomTab(key) {
+    setActiveView(key);
+    setParentId(null);
+    setCrumbs([{ id: null, name: "My Drive" }]);
+  }
 
 
   const bottomActive = activeView;
 
+  // Decide which component to use based on 'viewMode' (grid icon vs list icon)
   const renderItem = ({ item }) =>
     viewMode === "grid" ? (
       <FileCard item={item} onPress={() => openItem(item)} />
@@ -164,6 +183,7 @@ function setViewFromBottomTab(key) {
         onAvatarPress={logout}
       />
 
+      {/* Only show the path bar if we are deeper than the root folder */}
       {crumbs.length > 1 ? (
         <View style={styles.crumbsWrap}>
           <Breadcrumbs crumbs={crumbs} onCrumbPress={onCrumbPress} />
@@ -179,14 +199,14 @@ function setViewFromBottomTab(key) {
       ) : null}
 
       {loading ? (
-        <View style={styles.center}>
+        <div style={styles.center}>
           <ActivityIndicator />
-        </View>
+        </div>
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 140 }}
+          contentContainerStyle={{ paddingBottom: 140 }} // Room for FAB and Tabs
           renderItem={renderItem}
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -196,10 +216,12 @@ function setViewFromBottomTab(key) {
         />
       )}
 
+      {/* Floating Action Button (FAB) for creating new things */}
       <NewFab onPress={() => {}} />
 
       <BottomTabs active={bottomActive} onChange={setViewFromBottomTab} />
 
+      {/* The full-screen modal that shows file info and content */}
       <FileDetailsModal
         open={detailsOpen}
         file={selected}
