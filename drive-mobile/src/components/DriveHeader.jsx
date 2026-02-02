@@ -7,15 +7,17 @@ export default function DriveHeader({
   onChangeSearch,
   onSubmitSearch,
   onOpenMenu,
-  onRightAction,   // sparkle
+  onRightAction,   // Used for the "Sparkle/AI" action
   onAvatarPress,
 }) {
   return (
     <View style={styles.wrap}>
+      {/* Menu Button (Hamburger) */}
       <Pressable onPress={onOpenMenu} hitSlop={10} style={styles.iconBtn}>
         <Text style={styles.icon}>≡</Text>
       </Pressable>
 
+      {/* The Search Bar "Pill" container */}
       <View style={styles.searchPill}>
         <Text style={styles.searchIcon}>⌕</Text>
         <TextInput
@@ -24,16 +26,20 @@ export default function DriveHeader({
           placeholder="Search in Drive"
           placeholderTextColor={colors.muted}
           style={styles.searchInput}
+          // 'returnKeyType="search"' changes the keyboard button to say "Search"
           returnKeyType="search"
+          // 'onSubmitEditing' triggers when the user presses the search button on keyboard
           onSubmitEditing={onSubmitSearch}
           autoCapitalize="none"
         />
       </View>
 
+      {/* Sparkle Action Button */}
       <Pressable onPress={onRightAction} hitSlop={10} style={styles.iconBtn}>
         <Text style={styles.icon}>✦</Text>
       </Pressable>
 
+      {/* Profile/Avatar Button - currently shows a Greek 'lambda' as a placeholder */}
       <Pressable onPress={onAvatarPress} hitSlop={10} style={styles.avatar}>
         <Text style={styles.avatarText}>λ</Text>
       </Pressable>
@@ -48,7 +54,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.md,
     backgroundColor: colors.bg,
-    gap: 10,
+    gap: 10, // Modern gap property creates even spacing between items
   },
   iconBtn: {
     width: 40,
@@ -60,7 +66,7 @@ const styles = StyleSheet.create({
   icon: { fontSize: 18, color: colors.text },
 
   searchPill: {
-    flex: 1,
+    flex: 1, // Takes up all remaining space between the icons
     height: 46,
     borderRadius: radius.pill,
     backgroundColor: colors.searchPill,
@@ -69,7 +75,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   searchIcon: { color: colors.muted, fontSize: 16, marginRight: 10 },
-  searchInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 0 },
+  searchInput: { 
+    flex: 1, 
+    color: colors.text, 
+    fontSize: 14, 
+    paddingVertical: 0 // Removes default Android/iOS inner padding
+  },
 
   avatar: {
     width: 38,
