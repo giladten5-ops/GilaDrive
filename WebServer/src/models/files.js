@@ -15,6 +15,9 @@ function getFileMetadata(id) {
 
 // List files for a user under a specific parent folder (or root if parentId is null)
 function listFiles(userId, parentId = null, view = null) {
+  if (parentId === "" || parentId === "null" || parentId === undefined) {
+    parentId = null;
+  }
   let hasAccess;
   const userPerms = listUserPermissions(userId).map(p => p.fileId);
   if (parentId) {

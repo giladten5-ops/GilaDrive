@@ -3,7 +3,10 @@ import { API_BASE } from "../config/config.js";
 
 const TOKEN_KEY = "token";
 
-
+/**
+ * TOKEN MANAGEMENT
+ * These helpers handle the local storage of the JWT token.
+ */
 export async function getToken() {
     return await AsyncStorage.getItem(TOKEN_KEY);
 }
@@ -16,29 +19,33 @@ export async function removeToken() {
      await AsyncStorage.removeItem(TOKEN_KEY);
 }
 
-
-
-
-
-
-// one func to handle all CRUD operations
+/**
+ * UNIVERSAL API REQUEST HANDLER
+ * This handles the repetitive work of setting headers, attaching tokens, 
+ * and parsing the JSON response.
+ */
 export async function apiRequest(path, method = "GET", body, headers = {}, withAuth = false) {
     const config = {
         method,
         headers: { ...headers },
     };
+
+    // Automatically attach the Bearer token if the request requires authentication
     if (withAuth) {
         const token = await getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
     }
+
     if (body !== undefined) {
         config.headers["Content-Type"] = "application/json";
         config.body = JSON.stringify(body);
     }
+
     const normalizedBase = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
     const url = normalizedBase ? `${normalizedBase}${path}` : path;
+    
     const response = await fetch(url, config);
     let data = null;
     try {
@@ -58,9 +65,8 @@ export async function apiRequest(path, method = "GET", body, headers = {}, withA
     return data;
 }
 
+// --- AUTHENTICATION ---
 
-
-// sends a POST request to our node backend to register a new user
 export async function registerUser({ username, name, image, password }) {
     return apiRequest("/api/users", "POST", { username, name, image, password });
 }
@@ -69,8 +75,10 @@ export async function loginUser({ username, password }) {
     return apiRequest("/api/tokens", "POST", { username, password });
 }
 
+// --- FILE OPERATIONS ---
+
 export async function listFiles(filters = {}) {
-    //filters can be { parentId: 'some folder id', view: 'trash/starred/shared/...' }
+    // Converts an object like { parentId: '123' } into a query string like '?parentId=123'
     const params = new URLSearchParams(filters).toString();
     const path = params ? `/api/files?${params}` : "/api/files";
 
@@ -85,6 +93,10 @@ export async function getFile(fileId) {
     return apiRequest(`/api/files/${fileId}`, "GET", undefined, {}, true);
 }
 
+/**
+ * Unified Update Function (PATCH)
+ * Handles renaming, moving, and now starring.
+ */
 export async function updateFile(fileId, updates) {
     return apiRequest(`/api/files/${fileId}`, "PATCH", updates, {}, true);
 }
@@ -93,13 +105,18 @@ export async function deleteFile(fileId) {
     return apiRequest(`/api/files/${fileId}`, "DELETE", undefined, {}, true);
 }
 
+/**
+ * we send a PATCH request to update the 'isStarred' boolean property.
+ */
 export async function starFile(fileId) {
-    return apiRequest(`/api/files/${fileId}/star`, "POST", undefined, {}, true);
+    return updateFile(fileId, { isStarred: true });
 }
 
 export async function unstarFile(fileId) {
-    return apiRequest(`/api/files/${fileId}/star`, "DELETE", undefined, {}, true);
+    return updateFile(fileId, { isStarred: false });
 }
+
+// --- OTHER ---
 
 export async function getUserId(username) {
   return apiRequest(`/api/users?username=${encodeURIComponent(username)}`, "GET", undefined, {}, true);
@@ -116,6 +133,7 @@ export async function searchFiles(query) {
     }
     return apiRequest(`/api/search/${q}`, "GET", undefined, {}, true);
 }
+
 export async function updateUserImage(userId, image) {
     return apiRequest(`/api/users/${userId}`, "PATCH", { image }, {}, true);
 }
