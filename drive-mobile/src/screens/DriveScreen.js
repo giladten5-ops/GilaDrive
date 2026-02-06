@@ -1,7 +1,6 @@
 // src/screens/DriveScreen.js
 import { useEffect, useMemo, useRef, useState } from "react";
 import { 
-  SafeAreaView, 
   View, 
   Text, 
   FlatList, 
@@ -9,6 +8,7 @@ import {
   StyleSheet, 
   Alert 
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   listFiles,
   getFile,

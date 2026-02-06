@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { SafeAreaView, Text, Button, View, TextInput } from "react-native";
+import { Text, Button, View, TextInput } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { loginUser, setToken } from "../api/api"; // adjust path if needed
 
 export default function Login({ goHome, onLoggedIn }) {

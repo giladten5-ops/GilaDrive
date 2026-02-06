@@ -1,4 +1,5 @@
-import { SafeAreaView, Text, Button, View } from "react-native";
+import { Text, Button, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen({ onGoLogin, onGoRegister }) {
   return (

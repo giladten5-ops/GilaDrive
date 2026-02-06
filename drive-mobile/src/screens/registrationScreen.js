@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { SafeAreaView, Text, Button, View, TextInput, StyleSheet, ScrollView } from "react-native";
+import { Text, Button, View, TextInput, StyleSheet, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { registerUser } from "../api/api";
 import { colors } from "../ui/tokens";
 
