@@ -27,6 +27,9 @@ function attachIsStarredField(fileDoc, userId) {
 
 
 async function listFiles (userId, parentId = null, view = null) {
+  if (parentId === "" || parentId === "null" || parentId === undefined) {
+    parentId = null;
+  }
   const {checkUserPermission, listUserPermissions} = require("./permissions");
   const userPerms = (await listUserPermissions(userId))
   const sharedFileIds = userPerms.map(p => p.fileId);

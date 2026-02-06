@@ -17,6 +17,19 @@ const searchRoutes = require("./routes/search");
 const auth = require("./middleware/auth");
 const app = express();
 
+//just now for development, allow CORS from localhost:3000 (this means allowing requests from the React Native app running in Expo
+
+const cors = require("cors");
+
+app.use(cors({
+  origin: ["http://localhost:8081", "http://localhost:19006"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+app.options(/.*/, cors());
+
+
 app.use(express.json({ limit: "10mb" }));
 
 // if there was a syntax error in the JSON, handle it:
