@@ -221,7 +221,7 @@ async function createFile({ name, ownerId, ownerName, type, parentId, content })
 
 // migrate getFile to use MongoDB and Mongoose
 async function getFile(id, userId) {
-  const file = await FileSchema.findById(id).lean();
+  const file = await FileSchema.findById(id).populate('ownerId', 'username').lean();
   if (!file) throw { status: 404, message: "File not found" };
 
   const hasAccess = await checkUserPermission(id, userId, 'read');
@@ -234,17 +234,28 @@ async function getFile(id, userId) {
   file.isStarred = file.starredBy
     ? file.starredBy.some(uid => uid.toString() === userId.toString())
     : false;
+
+  file.name = file.filename;
+  file.ownerName = file.ownerName ?? file.ownerId?.username ?? null;
     
   // Fetch file names if it's a folder
   if (file.type === "folder") {
-    const children = await FileSchema.find({ parentId: id, isTrashed: false }).lean();
-    file.children = children.map(child => ({
-      ...child,
-      id: child._id,
-      isStarred: child.starredBy
-        ? child.starredBy.some(uid => uid.toString() === userId.toString())
-        : false
-    }));
+    const children = await FileSchema.find({ parentId: id, isTrashed: false })
+      .populate('ownerId', 'username')
+      .lean();
+    file.children = children.map(child => {
+      const mapped = {
+        ...child,
+        id: child._id.toString(),
+        name: child.filename,
+        ownerName: child.ownerName ?? child.ownerId?.username ?? null,
+        isStarred: child.starredBy
+          ? child.starredBy.some(uid => uid.toString() === userId.toString())
+          : false
+      };
+      delete mapped._id;
+      return mapped;
+    });
   } else {
     try {
       const response = await sendRequest(`GET ${id}`);
@@ -253,7 +264,7 @@ async function getFile(id, userId) {
       file.content = "";  
     }
 }
-file.id = file._id;
+file.id = file._id.toString();
 delete file._id;
 return file;
 
@@ -271,7 +282,7 @@ async function searchFiles(query, userId) {
     const lowerQuery = query.toLowerCase();
 
     //fetch all non-trashed files
-    const allFiles = await FileSchema.find({ isTrashed: false });
+    const allFiles = await FileSchema.find({ isTrashed: false }).populate('ownerId', 'username');
 
     // Filter files to those the user has read access to, running checks in parallel
    const permChecks = await Promise.all(
@@ -296,6 +307,9 @@ async function searchFiles(query, userId) {
 
     // Use a loop to allow await inside
     for (const file of allowedFiles) {
+      file.isStarred = file.starredBy
+        ? file.starredBy.some(uid => uid.toString() === userId.toString())
+        : false;
       // Check logical name match
       if (file.filename.toLowerCase().includes(lowerQuery)) {
         finalResults.push(file);
@@ -452,6 +466,7 @@ async function writeFileContent(fileId, userId, content) {
     const post = await sendRequest(`POST ${fileId} ${newContent}`);
     if (post?.status && post.status >= 400) throw post;
   }
+  file.lastUpdateTime = new Date().toISOString();
   file.markModified('content');
   return await file.save();
 }
@@ -524,9 +539,10 @@ async function changeParentId(fileId, userId, updatedParentId) {
 //helper method to check if a file is an ancestor of another
 async function isAncestor(ancestorFile, nodeFile) {
   let current = nodeFile;
+  const ancestorId = (ancestorFile._id ?? ancestorFile.id)?.toString();
 
   while (current && current.parentId != null) {
-    if (current.parentId === ancestorFile.id) return true;
+    if (current.parentId.toString() === ancestorId) return true;
     current = await FileSchema.findById(current.parentId);
   }
   return false;
