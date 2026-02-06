@@ -327,7 +327,7 @@ export default function DriveScreen() {
         />
       )}
 
-      {activeView !== "trash" ? <NewFab onPress={() => setCreateOpen(true)} /> : null}
+      {activeView === "home" ? <NewFab onPress={() => setCreateOpen(true)} /> : null}
 
       <BottomTabs 
         active={activeView} 
