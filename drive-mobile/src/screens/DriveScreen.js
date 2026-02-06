@@ -9,7 +9,18 @@ import {
   StyleSheet, 
   Alert 
 } from "react-native";
-import { listFiles, getFile, updateFile, deleteFile, starFile, unstarFile, searchFiles } from "../api/api";
+import {
+  listFiles,
+  getFile,
+  updateFile,
+  deleteFile,
+  starFile,
+  unstarFile,
+  searchFiles,
+  uploadFile,
+  getUserId,
+  addPermission,
+} from "../api/api";
 import { useAuth } from "../auth/AuthContext";
 import { colors } from "../ui/tokens";
 
@@ -24,6 +35,11 @@ import Breadcrumbs from "../components/BreadCrumbs";
 import FileDetailsModal from "../components/FileDetailsModal";
 import FileOptionsMenu from "../components/FileOptionsMenu";
 import TextEditorModal from "../components/TextEditorModal";
+import SideMenuModal from "../components/SideMenuModal";
+import CreateItemModal from "../components/CreateItemModal";
+import PromptModal from "../components/PromptModal";
+import ShareModal from "../components/ShareModal";
+import MovePickerModal from "../components/MovePickerModal";
 
 export default function DriveScreen() {
   const { logout } = useAuth();
@@ -39,6 +55,9 @@ export default function DriveScreen() {
   const [q, setQ] = useState(""); 
   const [searchMode, setSearchMode] = useState(false); 
 
+  const [sideOpen, setSideOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+
   const [menuFile, setMenuFile] = useState(null);
   const [selected, setSelected] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -46,6 +65,16 @@ export default function DriveScreen() {
   const [editContent, setEditContent] = useState(""); 
   const [isSaving, setIsSaving] = useState(false);
   const requestId = useRef(0);
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameFile, setRenameFile] = useState(null);
+
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareFile, setShareFile] = useState(null);
+
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [moveFile, setMoveFile] = useState(null);
 
   // --- Filters ---
   const filters = useMemo(() => {
@@ -73,6 +102,12 @@ export default function DriveScreen() {
     refresh(); 
   }, [activeView, parentId]);
 
+  function setView(nextView) {
+    setActiveView(nextView);
+    setParentId(null);
+    setCrumbs([{ id: null, name: "My Drive" }]);
+  }
+
   // --- Actions ---
   const isImage = (name) => {
     const ext = String(name || "").toLowerCase().split('.').pop();
@@ -80,6 +115,10 @@ export default function DriveScreen() {
   };
 
   async function openItem(item) {
+    if (item.isTrashed) {
+      Alert.alert("In trash", "Restore this item to open it.");
+      return;
+    }
     if (item.type === "folder") {
       setParentId(item.id);
       setCrumbs((prev) => [...prev, { id: item.id, name: item.name }]);
@@ -125,10 +164,55 @@ export default function DriveScreen() {
   };
 
   async function handleMenuAction(actionId, file) {
-    if (actionId === 'star') handleToggleStar(file);
-    else if (actionId === 'delete') {
-      try { await deleteFile(file.id); refresh(); }
-      catch (e) { Alert.alert("Error", "Delete failed."); }
+    if (actionId === "star") {
+      handleToggleStar(file);
+      return;
+    }
+    if (actionId === "rename") {
+      setRenameFile(file);
+      setRenameValue(file.name || "");
+      setRenameOpen(true);
+      return;
+    }
+    if (actionId === "share") {
+      setShareFile(file);
+      setShareOpen(true);
+      return;
+    }
+    if (actionId === "move") {
+      setMoveFile(file);
+      setMoveOpen(true);
+      return;
+    }
+    if (actionId === "restore") {
+      try {
+        await updateFile(file.id, { restore: true });
+        refresh();
+      } catch (e) {
+        Alert.alert("Error", e.message || "Restore failed.");
+      }
+      return;
+    }
+    if (actionId === "delete") {
+      const title = file.isTrashed ? "Delete forever?" : "Move to trash?";
+      const msg = file.isTrashed
+        ? "This will permanently delete the item."
+        : "You can restore it from Trash later.";
+      Alert.alert(title, msg, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: file.isTrashed ? "Delete" : "Move",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteFile(file.id);
+              refresh();
+            } catch (e) {
+              Alert.alert("Error", e.message || "Delete failed.");
+            }
+          },
+        },
+      ]);
     }
   }
 
@@ -143,12 +227,72 @@ export default function DriveScreen() {
     finally { setIsSaving(false); }
   };
 
+  async function handleCreate({ type, name, content }) {
+    try {
+      setCreateOpen(false);
+      await uploadFile({
+        name,
+        type,
+        parentId,
+        content,
+      });
+      refresh();
+    } catch (e) {
+      Alert.alert("Error", e.message || "Create failed.");
+    }
+  }
+
+  async function handleRenameConfirm() {
+    const file = renameFile;
+    const next = renameValue.trim();
+    if (!file || !next) return;
+    try {
+      setRenameOpen(false);
+      await updateFile(file.id, { name: next });
+      refresh();
+    } catch (e) {
+      Alert.alert("Error", e.message || "Rename failed.");
+    }
+  }
+
+  async function handleShare({ username, permissionType }) {
+    if (!shareFile) return;
+    try {
+      const res = await getUserId(username);
+      await addPermission(shareFile.id, { userId: res.userId, permissionType });
+      setShareOpen(false);
+      Alert.alert("Shared", `Shared with ${res.username} (${permissionType})`);
+    } catch (e) {
+      Alert.alert("Error", e.message || "Share failed.");
+    }
+  }
+
+  async function handleMove(destinationParentId) {
+    if (!moveFile) return;
+    try {
+      setMoveOpen(false);
+      await updateFile(moveFile.id, { parentId: destinationParentId });
+      refresh();
+    } catch (e) {
+      Alert.alert("Error", e.message || "Move failed.");
+    }
+  }
+
   return (
     <SafeAreaView style={styles.root}>
+      <SideMenuModal
+        visible={sideOpen}
+        active={activeView}
+        onClose={() => setSideOpen(false)}
+        onSelect={(v) => setView(v)}
+        onLogout={logout}
+      />
+
       <DriveHeader 
         searchValue={q}
         onChangeSearch={setQ}
         onSubmitSearch={doSearch}
+        onOpenMenu={() => setSideOpen(true)}
         onAvatarPress={logout} // Directly calling logout now
       />
 
@@ -183,11 +327,11 @@ export default function DriveScreen() {
         />
       )}
 
-      <NewFab onPress={() => {}} />
+      {activeView !== "trash" ? <NewFab onPress={() => setCreateOpen(true)} /> : null}
 
       <BottomTabs 
         active={activeView} 
-        onChange={(k) => { setActiveView(k); setParentId(null); setCrumbs([{id: null, name: "My Drive"}]); }} 
+        onChange={(k) => setView(k)} 
       />
 
       <TextEditorModal
@@ -203,6 +347,39 @@ export default function DriveScreen() {
       <FileDetailsModal open={detailsOpen} file={selected} onClose={() => setDetailsOpen(false)} onStarToggle={() => handleToggleStar(selected)} />
       
       <FileOptionsMenu visible={!!menuFile} file={menuFile} onClose={() => setMenuFile(null)} onAction={handleMenuAction} />
+
+      <CreateItemModal
+        visible={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreate}
+      />
+
+      <PromptModal
+        visible={renameOpen}
+        title="Rename"
+        label="New name"
+        value={renameValue}
+        onChangeValue={setRenameValue}
+        placeholder="Enter name"
+        confirmText="Save"
+        cancelText="Cancel"
+        onCancel={() => setRenameOpen(false)}
+        onConfirm={handleRenameConfirm}
+      />
+
+      <ShareModal
+        visible={shareOpen}
+        file={shareFile}
+        onClose={() => setShareOpen(false)}
+        onShare={handleShare}
+      />
+
+      <MovePickerModal
+        visible={moveOpen}
+        file={moveFile}
+        onClose={() => setMoveOpen(false)}
+        onMove={handleMove}
+      />
     </SafeAreaView>
   );
 }
