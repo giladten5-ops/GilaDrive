@@ -2,7 +2,15 @@
 import { Modal, View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { colors, spacing, radius } from "../ui/tokens";
 
-export default function TextEditorModal({ visible, fileName, value, onSave, onClose, isSaving }) {
+export default function TextEditorModal({
+  visible,
+  fileName,
+  value,
+  onChange,
+  onSave,
+  onClose,
+  isSaving,
+}) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <KeyboardAvoidingView 
@@ -27,7 +35,7 @@ export default function TextEditorModal({ visible, fileName, value, onSave, onCl
           style={styles.input}
           multiline
           value={value}
-          onChangeText={onSave ? (text) => onSave(text, false) : null} // Helper for live-updating local state
+          onChangeText={onChange}
           autoFocus
           placeholder="Start typing your magic..."
           placeholderTextColor={colors.muted}
