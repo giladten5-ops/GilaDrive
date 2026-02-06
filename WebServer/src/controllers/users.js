@@ -1,6 +1,6 @@
 const userModel = require("../models/users");
 
-function patchUserImage(req, res) {
+async function patchUserImage(req, res) {
     const { id } = req.params;
     const { image } = req.body || {};
     const authUserId = req.user.id;
@@ -12,7 +12,7 @@ function patchUserImage(req, res) {
         return res.status(400).json({ error: "Image must be a string." });
     }
     try {
-        const updated = userModel.setUserImage(id, image ? image.trim() : '');
+        const updated = await userModel.setUserImage(id, image ? image.trim() : '');
         return res.status(200).json({
             id: updated.id,
             username: updated.username,
@@ -27,7 +27,7 @@ function patchUserImage(req, res) {
     }
 }
 
-function createUser(req, res) {
+async function createUser(req, res) {
     const { username, password, name, image } = req.body || {};
 
     if (!username || typeof username !== 'string' || username.trim() === '') {
@@ -40,7 +40,7 @@ function createUser(req, res) {
         return res.status(400).json({ error: "Name is required" });
     }
     try {
-        const newUser = userModel.createUser({
+        const newUser = await userModel.createUser({
             username: username.trim(),
             password: password.trim(),
             name: name ? name.trim() : '',
@@ -60,9 +60,9 @@ function createUser(req, res) {
     }
 }
 
-function getUserById(req, res) {
+async function getUserById(req, res) {
     const { id } = req.params;
-    const user = userModel.getUserById(id);
+    const user = await userModel.getUserById(id);
 
     if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -75,9 +75,9 @@ function getUserById(req, res) {
     });
 }
 
-function getUserId(req, res) {
+async function getUserId(req, res) {
   const { username } = req.query;
-  const id = userModel.getUserId(username);
+  const id = await userModel.getUserId(username);
 
   if (!id) {
     return res.status(404).json({ error: "User not found" });

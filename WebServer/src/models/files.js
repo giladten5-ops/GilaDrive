@@ -6,96 +6,157 @@ const { listFilePermissions: listFilePermissions,
   checkUserPermission: checkUserPermission,
   getPermissionByUserAndFile,
   removePermission } = require("./permissions");
+const UserSchema = require("./UserSchema");
+const FileSchema = require("./FileSchema");
+const mongoose = require("mongoose");
 
-const files = [];
 
-function getFileMetadata(id) {
-  return files.find(f => f.id === id);
+async function getFileMetadata(id) {
+  return FileSchema.findById(id);
+}
+function attachIsStarredField(fileDoc, userId) {
+  const file = fileDoc.toObject();
+  file.id = file._id.toString();
+  file.name = file.filename;
+  file.isStarred = file.starredBy
+    ? file.starredBy.some(uid => uid.toString() === userId.toString())
+    : false;
+  return file;
 }
 
-// List files for a user under a specific parent folder (or root if parentId is null)
-function listFiles(userId, parentId = null, view = null) {
-  let hasAccess;
-  const userPerms = listUserPermissions(userId).map(p => p.fileId);
+
+
+async function listFiles (userId, parentId = null, view = null) {
+  const {checkUserPermission, listUserPermissions} = require("./permissions");
+  const userPerms = (await listUserPermissions(userId))
+  const sharedFileIds = userPerms.map(p => p.fileId);
+
   if (parentId) {
-    hasAccess = checkUserPermission(parentId, userId, 'read');
-  }
-  if (parentId && !hasAccess) {
-    throw { status: 403, message: "Access denied to the specified folder" };
+    const hasAccess = await checkUserPermission(parentId, userId, 'read');
+    if (!hasAccess) {
+      throw { status: 403, message: "Access denied to the specified folder" };
+    }
   }
 
   if (view === "starred") {
-    const visibleFiles = files.filter(f => f.ownerId === userId || userPerms.includes(f.id));
-    return visibleFiles.filter(f => !f.isTrashed && (f.starredBy || []).includes(userId));
+    return await FileSchema.find({
+      $or: [
+        { ownerId: userId },
+        { _id: { $in: sharedFileIds } }
+      ],
+      isTrashed: false,
+      starredBy: userId
+    }).populate('ownerId', 'username');  
   }
-
-
   if (view === "trash") {
-    return files.filter(file => file.ownerId === userId && file.isTrashed);
+    return await FileSchema.find({ 
+      ownerId: userId, 
+      isTrashed: true 
+    }).populate('ownerId', 'username');  
   }
-
   if (view === "recent") {
-    const visibleFiles = files.filter(f => f.ownerId === userId || userPerms.includes(f.id));
-    const recentFiles = visibleFiles
-      .filter(f => !f.isTrashed)
-      .sort((a, b) => {
-        // Sort by the most recent of lastOpenedTime or lastUpdateTime
-        const aOpened = new Date(a.lastOpenedTime).getTime() || 0;
-        const bOpened = new Date(b.lastOpenedTime).getTime() || 0;
-        const aUpdated = new Date(a.lastUpdateTime).getTime() || 0;
-        const bUpdated = new Date(b.lastUpdateTime).getTime() || 0;
-        const aRecent = Math.max(aOpened, aUpdated);
-        const bRecent = Math.max(bOpened, bUpdated);
-        return bRecent - aRecent;
-      })
-      .slice(0, 10); // return top 10 recent files
-    return recentFiles;
-  }
-  // view all shared files at top level, but be able to navigate inside shared folders
+    // Use aggregation to compute lastActivity and sort
+  const results = await FileSchema.aggregate([
+    {
+      $match: {
+        $or: [
+          { ownerId: new mongoose.Types.ObjectId(userId) }, // Ensure userId is an ObjectId
+          { _id: { $in: sharedFileIds } }
+        ],
+        isTrashed: false
+      }
+    },
+    {
+      $addFields: {
+        lastActivity: { $max: ["$lastOpenedTime", "$lastUpdateTime"] }
+      }
+    },
+    { $sort: { lastActivity: -1 } },
+    { $limit: 10 },
+    {
+      $lookup: {
+        from: "users", 
+        localField: "ownerId",
+        foreignField: "_id",
+        as: "ownerDoc" // Use a temporary name to avoid confusion
+      }
+    },
+    { $unwind: "$ownerDoc" }
+  ]);
+
+  // Map results to include isStarred and proper owner structure
+  return results.map(file => ({
+    ...file,
+    id: file._id.toString(),
+    name: file.filename, // Map filename to name
+    ownerId: {
+      _id: file.ownerDoc._id,
+      username: file.ownerDoc.username
+    },
+    // Recalculate isStarred for the UI
+    isStarred: (file.starredBy || []).some(uid => uid.toString() === userId.toString())
+  }));
+}
   if (view === "shared") {
-    // inside a shared folder: list its children normally (by parentId)
     if (parentId) {
-      return files.filter(f =>
-        f.parentId === parentId &&
-        !isPathTrashed(f) &&
-        checkUserPermission(f.id, userId, "read")
-      );
+      const children = await FileSchema.find({ parentId, isTrashed: false }).populate('ownerId', 'username');
+      const filteredChildren = [];
+      for (const child of children) {
+        const isTrashed = await isPathTrashed(child);
+        if (!isTrashed && await checkUserPermission(child._id, userId, "read")) {
+          filteredChildren.push(child);
+        }
+      }
+      return filteredChildren;
     }
 
-    // shared root: show only top-level shared entries (optional google-like)
-    return files.filter(f => {
-      if (f.ownerId === userId) return false;
-      if (isPathTrashed(f)) return false;
-      if (!checkUserPermission(f.id, userId, "read")) return false;
-      if (f.parentId && checkUserPermission(f.parentId, userId, "read")) return false;
-      return true;
-    });
+    const candidateFiles = await FileSchema.find({ 
+      _id: { $in: sharedFileIds },
+      ownerId: { $ne: userId },
+      isTrashed: false 
+    }).populate('ownerId', 'username');
+
+    const topLevelShared = [];
+    for (const file of candidateFiles) {
+      if (await isPathTrashed(file)) continue;
+      if (!await checkUserPermission(file._id, userId, "read")) continue;
+      if (file.parentId && await checkUserPermission(file.parentId, userId, "read")) continue;
+      if( file.parentId ) {
+        const parent = await checkUserPermission(file.parentId, userId, "read");
+        if (parent) continue;
+      }
+      topLevelShared.push(file);
+    }
+
+    return topLevelShared;
   }
 
+  let query = { isTrashed: false };
 
-
-
-  // Root level: list owned files only
   if (parentId === null) {
-    return files.filter(f => f.parentId === null && !f.isTrashed && f.ownerId === userId);
+    query.parentId = null;
+    query.ownerId = userId;
+  } else {
+    query.parentId = parentId;
   }
 
-  // Inside any folder (owned or shared): list children you can read (or write)
-  return files.filter(f =>
-    f.parentId === parentId &&
-    !isPathTrashed(f) &&
-    checkUserPermission(f.id, userId, "read")
-  );
+  const results = await FileSchema.find(query).populate('ownerId', 'username');
+  const filteredResults = [];
+  for (const file of results) {
+    if (!await isPathTrashed(file) && await checkUserPermission(file._id, userId, "read")) {
+      filteredResults.push(file);
+    }
+  }
+  return filteredResults.map(f => attachIsStarredField(f, userId));
 }
-
-
+  
 //helper function to check if a file is trashed
-function isPathTrashed(file) {
+async function isPathTrashed(file) {
   if (file.isTrashed) return true;
   if (!file.parentId) return false;
-  const parent = files.find(f => f.id === file.parentId);
+  const parent = await FileSchema.findById(file.parentId);
   if (parent) {
-    return isPathTrashed(parent);
+    return await isPathTrashed(parent);
   }
   return false;
 }
@@ -104,7 +165,7 @@ function isPathTrashed(file) {
 async function createFile({ name, ownerId, ownerName, type, parentId, content }) {
   // check parent existence and type
   if (parentId) {
-    const parent = getFileMetadata(parentId);
+    const parent = await FileSchema.findById(parentId);
     if (!parent) {
       throw { status: 404, message: "Parent directory not found" };
     }
@@ -113,125 +174,89 @@ async function createFile({ name, ownerId, ownerName, type, parentId, content })
     }
 
     //check writing permissions to parent folder
-    const hasWriteAccess = checkUserPermission(parentId, ownerId, 'write');
+    const hasWriteAccess = await checkUserPermission(parentId, ownerId, 'write');
     if (!hasWriteAccess) {
       throw { status: 403, message: "Permission denied: Cannot write to this folder" };
     }
   }
 
-  let id;
-  do {
-    id = crypto.randomUUID();
-  } while (files.some((file) => file.id === id));
-
   const normalizedType = type === "folder" ? "folder" : "file";
-  const resolvedOwnerName = ownerName ?? usersModel.getUserById(ownerId)?.username ?? null;
+  const user = await usersModel.getUserById(ownerId);
+  const resolvedOwnerName = ownerName ?? user?.username ?? null;
 
-  const newFile = {
-    id,
-    name,
+  const newFile = new FileSchema({
+    filename: name.trim(),
+    parentId: parentId || null,
     ownerId,
     ownerName: resolvedOwnerName,
     type: normalizedType,
-    parentId: parentId ?? null,
-    isTrashed: false,
-    creationTime: new Date().toISOString(),
-    lastUpdateTime: new Date().toISOString(),
-    lastOpenedTime: new Date().toISOString(),
-    starredBy: []
-  };
+  });
 
   try {
-    if (normalizedType === "file" && content?.trim()) {
-      const result = await sendRequest(`POST ${id} ${content}`);
-      if (result?.status && result.status >= 400) {
-        throw result;
+    const savedFile = await newFile.save();
+
+    // If it's a file, create physical content in C++
+    if (normalizedType === "file" && content && content.trim() !== "") {
+      const response = await sendRequest(`POST ${savedFile._id} ${content}`);
+      if (response?.status && response.status >= 400) {
+        // Rollback metadata creation on failure
+        await FileSchema.findByIdAndDelete(savedFile._id);
+        throw response;
       }
     }
 
-    files.push(newFile);
-    return newFile;
-
+    return savedFile;
   } catch (err) {
     throw {
       status: err?.status ?? 500,
-      message: err?.message ?? "Failed to create file in backend"
+      message: err?.message ?? "Failed to create file"
     };
   }
-}
-
-
-
-async function getFile(id, userId) {
-  const fileMetadata = files.find(f => f.id === id);
-  if (!fileMetadata) {
-    throw { status: 404, message: "File not found" };
-  }
-
-  const hasAccess = checkUserPermission(id, userId, 'read');
-  if (!hasAccess) {
-    throw { status: 403, message: "Access denied" };
-  }
-  // Update last opened time
-  fileMetadata.lastOpenedTime = new Date().toISOString();
-
-  // Fetch file names if it's a folder
-  if (fileMetadata.type === "folder") {
-    const children = files.filter(f => f.parentId === id).map(child => ({
-      id: child.id,
-      name: child.name,
-      ownerId: child.ownerId,
-      ownerName: child.ownerName || null,
-      type: child.type,
-      parentId: child.parentId
-    }));
-    // Return folder metadata with children
-    return {
-      id: fileMetadata.id,
-      name: fileMetadata.name,
-      ownerId: fileMetadata.ownerId,
-      ownerName: fileMetadata.ownerName || null,
-      type: fileMetadata.type,
-      isStarred: (fileMetadata.starredBy || []).includes(userId),
-      lastOpenedTime: fileMetadata.lastOpenedTime,
-      creationTime: fileMetadata.creationTime,
-      lastUpdateTime: fileMetadata.lastUpdateTime,
-      children
-    };
-  }
-
-  let fileContent = "";
-
-  try {
-    // Fetch content from backend for files
-    const response = await sendRequest(`GET ${id}`);
-    fileContent = response?.content ?? "";
-  } catch (err) {
-    // catch 404 from backend as empty content (for empty files we save only metadata)
-    if (err?.status === 404) {
-      fileContent = "";
-    } else {
-      throw {
-        status: err?.status ?? 500,
-        message: err?.message ?? "Failed to fetch content from backend"
-      };
     }
-  }
 
-  return {
-    id: fileMetadata.id,
-    name: fileMetadata.name,
-    ownerId: fileMetadata.ownerId,
-    ownerName: fileMetadata.ownerName || null,
-    type: fileMetadata.type,
-    parentId: fileMetadata.parentId,
-    creationTime: fileMetadata.creationTime,
-    lastUpdateTime: fileMetadata.lastUpdateTime,
-    lastOpenedTime: fileMetadata.lastOpenedTime,
-    isStarred: (fileMetadata.starredBy || []).includes(userId),
-    content: fileContent ?? ""
-  };
+  
+
+// migrate getFile to use MongoDB and Mongoose
+async function getFile(id, userId) {
+  const file = await FileSchema.findById(id).lean();
+  if (!file) throw { status: 404, message: "File not found" };
+
+  const hasAccess = await checkUserPermission(id, userId, 'read');
+  if (!hasAccess) throw { status: 403, message: "Access denied" };
+
+  // Update last opened time
+  await FileSchema.findByIdAndUpdate(id, { lastOpenedTime: new Date().toISOString() });
+
+  //compute isStarred
+  file.isStarred = file.starredBy
+    ? file.starredBy.some(uid => uid.toString() === userId.toString())
+    : false;
+    
+  // Fetch file names if it's a folder
+  if (file.type === "folder") {
+    const children = await FileSchema.find({ parentId: id, isTrashed: false }).lean();
+    file.children = children.map(child => ({
+      ...child,
+      id: child._id,
+      isStarred: child.starredBy
+        ? child.starredBy.some(uid => uid.toString() === userId.toString())
+        : false
+    }));
+  } else {
+    try {
+      const response = await sendRequest(`GET ${id}`);
+      file.content = response?.content ?? "";
+    } catch (err) {
+      file.content = "";  
+    }
 }
+file.id = file._id;
+delete file._id;
+return file;
+
+}
+
+
 
 
 
@@ -239,15 +264,24 @@ async function getFile(id, userId) {
 // Search files by logical name or content
 async function searchFiles(query, userId) {
   try {
-    if (query === undefined || query === null || query.trim() === "") {
-      return [];
-    }
-    const lowerQuery = (query || "").toLowerCase();
+    if (!query || query.trim() === "") return [];
+    const lowerQuery = query.toLowerCase();
 
-    // List files user has access to - either owner or with read permission, and not trashed because we don't search in trash
-    const allowedFiles = files.filter(f => {
-      return checkUserPermission(f.id, userId, 'read') && !isPathTrashed(f);
-    });
+    //fetch all non-trashed files
+    const allFiles = await FileSchema.find({ isTrashed: false });
+
+    // Filter files to those the user has read access to, running checks in parallel
+   const permChecks = await Promise.all(
+      allFiles.map(async (file) => ({
+        file,
+        hasAccess: await checkUserPermission(file._id, userId, "read"),
+    }))
+  );
+
+    const allowedFiles = permChecks
+      .filter(({ hasAccess }) => hasAccess)
+      .map(({ file }) => file);
+    
 
     // Request backend search and split results to array of physical IDs
     const cppResponse = await sendRequest(`SEARCH ${query}`);
@@ -260,18 +294,18 @@ async function searchFiles(query, userId) {
     // Use a loop to allow await inside
     for (const file of allowedFiles) {
       // Check logical name match
-      if (file.name.toLowerCase().includes(lowerQuery)) {
+      if (file.filename.toLowerCase().includes(lowerQuery)) {
         finalResults.push(file);
         continue;
       }
 
       // Check if C++ found this specific file ID
-      const inCppResults = physicalIds.includes(file.id);
+      const inCppResults = physicalIds.includes(file._id.toString());
 
       if (inCppResults) {
         // If the ID includes the query, we MUST verify content
-        if (file.id.toLowerCase().includes(lowerQuery)) {
-          const requestFile = await sendRequest(`GET ${file.id}`);
+        if (file._id.toString().toLowerCase().includes(lowerQuery)) {
+          const requestFile = await sendRequest(`GET ${file._id.toString()}`);
           const fileContent = requestFile.content || "";
 
           if (requestFile.status === 200 && fileContent.toLowerCase().includes(lowerQuery)) {
@@ -294,15 +328,16 @@ async function searchFiles(query, userId) {
   }
 }
 
-
-async function deleteFile(fileId, userId) {
-  const file = files.find(f => f.id === fileId);
+async function deleteFile (fileId, userId) {
+  const file = await FileSchema.findById(fileId);
   if (!file) throw { status: 404, message: "File not found" };
-  //check if user is the file's owner
-  if (file.ownerId === userId) {
+
+  // case #1: owner wants to delete the file
+  if (file.ownerId.toString() === userId.toString()) {
     if (!file.isTrashed) {
-      //mark trash first
+      //not truly delete - just mark as trashed
       file.isTrashed = true;
+      await file.save();
       return { status: 200, message: "Moved to trash", data: file };
     } else {
       //if file already trashed - delete it and its subtree permanently.
@@ -310,87 +345,93 @@ async function deleteFile(fileId, userId) {
       return { status: 204, message: "Permanently deleted" };
     }
   } else {
-    //if the file is shared with the user - remove the permission
-    let perm = getPermissionByUserAndFile(userId, fileId);
+    // case #2: shared user wants to delete the file, so we remove his permission (if exists)
+    // so the file is no longer visible to him, but not actually deleted for others
+    const perm = await getPermissionByUserAndFile(userId, fileId);
     if (perm) {
-      removePermission(perm.pid);
+      await removePermission(perm._id);
       return { status: 204, message: "Permission removed" };
     }
     //if the file is inside a shared folder that user has permission to write 
     // actually delete it (Google implementation)
-    if (checkUserPermission(fileId, userId, "write")) {
+    if (await checkUserPermission(fileId, userId, "write")) {
       await deleteSubtree(file);
       return { status: 204, message: "Permanently deleted" };
     }
+    throw { status: 403, message: "Permission denied: Cannot delete file or folder" }
   }
-  return { status: 403, message: "Permission denied: Cannot delete file or folder" }
 }
 
-async function deleteSubtree(file) {
-  let children;
-  if (file.type === "folder") { children = files.filter(f => f.parentId === file.id); }
 
-  if (children) {
-    //recursivly delete all childrens of the file
+
+
+  
+async function deleteSubtree(file) {
+  if (file.type === "folder") {
+    const children = await FileSchema.find({ parentId: file._id });
     for (const child of children) {
-      await deleteSubtree(child.id);
+      await deleteSubtree(child);
     }
   }
 
   if (file.type === "file") {
-    try { await sendRequest(`DELETE ${file.id}`); }
-    catch (err) {
+    try {
+      await sendRequest(`DELETE ${file._id.toString()}`);
+    } catch (err) {
       if (err?.status !== 404) {
         throw err;
       }
     }
   }
 
-  // remove metadata for this node
-  const index = files.findIndex(f => f.id === file.id);
-  if (index !== -1) files.splice(index, 1);
+  await FileSchema.findByIdAndDelete(file._id.toString());
 }
 
+
+
+
 async function restoreFile(fileId, userId) {
-  const file = files.find(f => f.id === fileId);
+  let file = await FileSchema.findById(fileId);
   if (!file) throw { status: 404, message: "File not found" };
 
   // Permission check: only the owner can restore
-  if (file.ownerId !== userId) {
+  if (file.ownerId.toString() !== userId.toString()) {
     throw { status: 403, message: "Permission denied" };
   }
 
   file.isTrashed = false;
+  await file.save();
 
   return { status: 200, message: "Restored successfully", data: file };
 }
 
 
-//method to change file name
+
+
 async function renameFile(fileId, userId, name) {
-  const file = files.find(f => f.id === fileId);
+  let file = await FileSchema.findById(fileId);
   if (!file) throw { status: 404, message: "File not found" };
 
   // check write permissions
-  const hasAccess = checkUserPermission(fileId, userId, 'write');
+  const hasAccess = await checkUserPermission(fileId, userId, 'write');
   if (!hasAccess) throw { status: 403, message: "Write permission required" };
 
   const newName = String(name).trim();
   if (!newName) throw { status: 400, message: "Non empty name is required" };
 
-  file.name = newName;
+  file.filename = newName;
   file.lastUpdateTime = new Date().toISOString();
 
-  return { ...file };
+  return await file.save();
 }
 
-//change file contnet
+
 async function writeFileContent(fileId, userId, content) {
-  const file = files.find(f => f.id === fileId);
+  let file = await FileSchema.findById(fileId);
   if (!file) throw { status: 404, message: "File not found" };
   if (file.type !== "file") throw { status: 400, message: "Cannot patch content of a folder" };
 
-  const hasAccess = checkUserPermission(fileId, userId, 'write');
+  const hasAccess = await checkUserPermission(fileId, userId, 'write');
   if (!hasAccess) throw { status: 403, message: "Write permission required" };
 
   const newContent = String(content);
@@ -402,58 +443,65 @@ async function writeFileContent(fileId, userId, content) {
   } catch (err) {
     if (err?.status !== 404) throw err;
   }
-
+  
   // create physical only if non-empty
   if (newContent.trim() !== "") {
     const post = await sendRequest(`POST ${fileId} ${newContent}`);
     if (post?.status && post.status >= 400) throw post;
   }
-
-  file.lastUpdateTime = new Date().toISOString();
-  return { ...file };
+  file.markModified('content');
+  return await file.save();
 }
 
 
-function starFile(fileId, userId) {
-  const file = files.find(f => f.id === fileId);
+
+
+async function starFile(fileId, userId) {
+  let file = await FileSchema.findById(fileId);
   if (!file) throw { status: 404, message: "File not found" };
 
-  if (!checkUserPermission(fileId, userId, "read")) {
+  if (!await checkUserPermission(fileId, userId, "read")) {
+    throw { status: 403, message: "Access denied" };
+  }
+  file = await FileSchema.findByIdAndUpdate(
+    fileId,
+    { $addToSet: { starredBy: userId } },
+    { new: true }
+  );
+  return file;
+  
+}
+
+async function unstarFile(fileId, userId) {
+  let file = await FileSchema.findById(fileId);
+  if (!file) throw { status: 404, message: "File not found" };
+
+  if (!await checkUserPermission(fileId, userId, "read")) {
     throw { status: 403, message: "Access denied" };
   }
 
-  file.starredBy ||= [];
-  if (!file.starredBy.includes(userId)) file.starredBy.push(userId);
+  file = await FileSchema.findByIdAndUpdate(
+    fileId,
+    { $pull: { starredBy: userId } },
+    { new: true }
+  );
   return file;
 }
 
-function unstarFile(fileId, userId) {
-  const file = files.find(f => f.id === fileId);
+async function changeParentId(fileId, userId, updatedParentId) {
+  let file = await FileSchema.findById(fileId);
   if (!file) throw { status: 404, message: "File not found" };
 
-  if (!checkUserPermission(fileId, userId, "read")) {
-    throw { status: 403, message: "Access denied" };
-  }
-
-  file.starredBy ||= [];
-  file.starredBy = file.starredBy.filter(id => id !== userId);
-  return file;
-}
-
-function changeParentId(fileId, userId, updatedParentId) {
-  const file = files.find(f => f.id === fileId);
-  if (!file) throw { status: 404, message: "File not found" };
-
-  if (!checkUserPermission(fileId, userId, "write")) {
+  if (!await checkUserPermission(fileId, userId, "write")) {
     throw { status: 403, message: "Access denied - only owner can move the file" };
   }
   if (updatedParentId !== null) {
-    const parent = files.find(f => f.id === updatedParentId);
+    const parent = await FileSchema.findById(updatedParentId);
     if (!parent) throw { status: 404, message: "ParentId not found" };
 
     if (parent.type !== "folder") { throw { status: 400, message: "Parent must be a folder" }; }
 
-    if (!checkUserPermission(updatedParentId, userId, "write")) {
+    if (!await checkUserPermission(updatedParentId, userId, "write")) {
       throw { status: 403, message: "Permission denied - cannot write in given folder" };
     }
 
@@ -461,22 +509,22 @@ function changeParentId(fileId, userId, updatedParentId) {
       throw { status: 400, message: "Cannot move a folder into itself" };
     }
 
-    if (file.type === "folder" && isAncestor(file, parent)) {
+    if (file.type === "folder" && await isAncestor(file, parent)) {
       throw { status: 400, message: "Cannot move a folder into its own descendant" };
     }
   }
 
   file.parentId = updatedParentId;
-  return file;
+  return await file.save();
 }
 
 //helper method to check if a file is an ancestor of another
-function isAncestor(ancestorFile, nodeFile) {
+async function isAncestor(ancestorFile, nodeFile) {
   let current = nodeFile;
 
   while (current && current.parentId != null) {
     if (current.parentId === ancestorFile.id) return true;
-    current = files.find(f => f.id === current.parentId);
+    current = await FileSchema.findById(current.parentId);
   }
   return false;
 }
