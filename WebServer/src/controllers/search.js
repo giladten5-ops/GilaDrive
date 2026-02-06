@@ -9,11 +9,11 @@ async function search(req, res) {
         const results = await filesModel.searchFiles(query, userId);
         // we return all these fields so the frontend can properly display the search results
         const formatResults = results.map(file => ({
-            id: file._id,
-            name: file.filename,
-            ownerName: file.ownerName,
+            id: (file._id ?? file.id)?.toString?.() ?? file.id,
+            name: file.name ?? file.filename,
+            ownerName: file.ownerName ?? file.ownerId?.username ?? null,
             type: file.type,
-            isStarred: file.isStarred,
+            isStarred: file.isStarred ?? (file.starredBy || []).some(uid => uid.toString() === userId.toString()),
             lastOpenedTime: file.lastOpenedTime,
             lastUpdateTime: file.lastUpdateTime
         }));

@@ -14,7 +14,7 @@ async function listPermissions(req, res) {
     const fileId = req.params.id;
     //check if file exists and requesting user is the owner
     const file = await getFileMetadata(fileId);
-    if (!file || file.ownerId.toString() !== ownerId) {
+    if (!file || file.ownerId.toString() !== ownerId.toString()) {
         return res.status(404).json({ error: "File not found" });
     }
     const permissions = (await listPermissionsModel(fileId)).map((perm) => ({
@@ -71,7 +71,7 @@ async function updatePermission(req, res) {
         return res.status(400).json({ error: "Invalid permissionType, must be 'read' or 'write'" });
     }
     const permission = await getPermissionModel(permissionId);
-    if (!permission || permission.fileId !== fileId) {
+    if (!permission || permission.fileId.toString() !== fileId.toString()) {
         return res.status(404).json({ error: "Permission not found for the specified file" });
     }
     const success = await updatePermissionModel(permissionId, permissionType);
@@ -92,7 +92,7 @@ async function removePermission(req, res) {
     }
     
     const permission = await getPermissionModel(permissionId);
-    if (!permission || permission.fileId !== fileId) {
+    if (!permission || permission.fileId.toString() !== fileId.toString()) {
         return res.status(404).json({ error: "Permission not found for the specified file" });
     }
     const success = await removePermissionModel(permissionId);
