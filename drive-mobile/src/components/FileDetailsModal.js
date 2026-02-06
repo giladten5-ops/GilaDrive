@@ -13,7 +13,7 @@ export default function FileDetailsModal({
 }) {
   // Logic helpers for conditional rendering
   const isFile = file?.type === "file";
-  const starred = !!file?.starred; // Standard "double-bang" to ensure a boolean
+  const starred = !!file?.isStarred; // Standard "double-bang" to ensure a boolean
 
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose}>

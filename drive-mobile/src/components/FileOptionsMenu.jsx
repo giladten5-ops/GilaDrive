@@ -6,17 +6,24 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
 
   // Use isStarred to match the backend/web logic
   const isStarred = !!file.isStarred;
+  const isTrashed = !!file.isTrashed;
 
-  const options = [
-    { 
-      id: 'star', 
-      label: isStarred ? 'Remove from starred' : 'Add to starred', 
-      icon: isStarred ? '⭐' : '☆' 
-    },
-    { id: 'share', label: 'Share', icon: '🔗' },
-    { id: 'delete', label: 'Delete', icon: '🗑️', color: colors.danger },
-    { id: 'move', label: 'Move to', icon: '📁' },
-  ];
+  const options = isTrashed
+    ? [
+        { id: "restore", label: "Restore", icon: "⤴︎" },
+        { id: "delete", label: "Delete forever", icon: "🗑️", color: colors.danger },
+      ]
+    : [
+        {
+          id: "star",
+          label: isStarred ? "Remove from starred" : "Add to starred",
+          icon: isStarred ? "⭐" : "☆",
+        },
+        { id: "rename", label: "Rename", icon: "✎" },
+        { id: "share", label: "Share", icon: "🔗" },
+        { id: "move", label: "Move to", icon: "📁" },
+        { id: "delete", label: "Move to trash", icon: "🗑️", color: colors.danger },
+      ];
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
