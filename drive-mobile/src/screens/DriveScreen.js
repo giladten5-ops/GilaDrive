@@ -228,14 +228,19 @@ export default function DriveScreen() {
   };
 
   async function handleCreate({ type, name, content }) {
+    const normalizedParentId =
+      parentId == null || parentId === "" || parentId === "null" || parentId === "undefined"
+        ? null
+        : parentId;
     try {
       setCreateOpen(false);
-      await uploadFile({
+      const payload = {
         name,
         type,
-        parentId,
         content,
-      });
+      };
+      if (normalizedParentId) payload.parentId = normalizedParentId;
+      await uploadFile(payload);
       refresh();
     } catch (e) {
       Alert.alert("Error", e.message || "Create failed.");
