@@ -7,25 +7,26 @@ const { listFiles: listFilesModel,
     writeFileContent: writeFileContent,
     starFile,
     unstarFile,
-    changeParentId } = require("../models/files");
+    changeParentId,
+    restoreFile } = require("../models/files");
     const userModel = require("../models/users");
 
 //list all files for the authenticated user, optionally filtered by parentId (null for root files)
-function listFiles(req, res) {
+async function listFiles(req, res) {
     const { parentId, view } = req.query; // "trash", "starred", etc....
+    const pid = parentId == null || parentId === "null" || parentId === "" ? null : String(parentId);
 
     // returns all files with the relevent filters
-    const rawFiles = listFilesModel(req.user.id, parentId, view);
-
+    const rawFiles = await listFilesModel(req.user.id, pid, view);
     const files = rawFiles.map(file => ({
         id: file.id,
-        name: file.name,
-        ownerName: file.ownerName || null,
+        name: file.name ?? file.filename,
+        ownerName: file.ownerName ?? file.ownerId?.username ?? null,
         type: file.type,
         parentId: file.parentId,
         isTrashed: file.isTrashed,
         creationTime: file.creationTime,
-        isStarred: (file.starredBy || []).includes(req.user.id),
+        isStarred: (file.starredBy || []).some(userId => userId.toString() === req.user.id.toString()) ? true : false,
         lastUpdateTime: file.lastUpdateTime,
         lastOpenedTime: file.lastOpenedTime
     }));
@@ -43,9 +44,9 @@ async function createFile(req, res) {
         return res.status(400).json({ error: "Type must be either 'file' or 'folder'" });
     }
 
-    const pid = parentId === undefined || parentId === "null" || parentId === "" ? null : String(parentId);
+    const pid = parentId == null || parentId === "null" || parentId === "" ? null : String(parentId);
     if (pid) {
-        const parentFile = getFileMetadata(pid);
+        const parentFile = await getFileMetadata(pid);
         if (!parentFile || parentFile.type !== "folder") {
             return res.status(400).json({ error: "Invalid parentId" });
         }
@@ -84,54 +85,51 @@ async function getFile(req, res) {
 
 
 async function updateFile(req, res) {
-    // get file id from params and new name from body
-    const fileId = req.params.id;
-    if (!fileId) {
-        return res.status(400).json({ error: "File id is required" });
+  const fileId = req.params.id;
+  if (!fileId) return res.status(400).json({ error: "File id is required" });
+
+  try {
+    const { name, content, isStarred, parentId, restore } = req.body || {};
+    const userId = req.user.id;
+
+    // ensure file exists
+    let updatedFile = await getFileMetadata(fileId);
+    if (!updatedFile) return res.status(404).json({ error: "File not found" });
+
+    if (restore === true) {
+      const restored = await restoreFile(fileId, userId); // { status, message, data }
+      updatedFile = await getFileMetadata(fileId);
     }
-    //find file
-    const file = getFileMetadata(fileId);
-    if (!file) {
-        return res.status(404).json({ error: "File not found" });
+
+    if (name !== undefined) {
+      updatedFile = await renameFile(fileId, userId, name);
     }
 
-    if (req.body.restore === true) { file.isTrashed = false; }
-    try {
-        const { name, content, isStarred, parentId } = req.body;
-        const fileId = req.params.id;
-        const userId = req.user.id;
-
-        // fetch to ensure file exists and user has base permissions
-        let updatedFile = await getFileMetadata(fileId);
-
-        if (name !== undefined) {
-            updatedFile = await renameFile(fileId, userId, name);
-        }
-
-        if (content !== undefined) {
-            updatedFile = await writeFileContent(fileId, userId, content);
-        }
-
-        if (isStarred !== undefined) {
-            updatedFile = isStarred ? await starFile(fileId, userId) : await unstarFile(fileId, userId);
-        }
-        if (parentId !== undefined) {
-            updatedFile = await changeParentId(fileId, userId, parentId);
-        }
-
-        res.status(200).json(updatedFile);
-
-    } catch (err) {
-        console.error(`Error updating file ${req.params.id}:`, err);
-
-        res.status(err.status || 500).json({
-            error: err.message || "Failed to update file"
-        });
+    if (content !== undefined) {
+      updatedFile = await writeFileContent(fileId, userId, content);
     }
+
+    if (isStarred !== undefined) {
+      updatedFile = isStarred
+        ? await starFile(fileId, userId)
+        : await unstarFile(fileId, userId);
+    }
+
+    if (parentId !== undefined) {
+      const pid = parentId == null || parentId === "null" || parentId === "" ? null : String(parentId);
+      updatedFile = await changeParentId(fileId, userId, pid);
+    }
+
+    return res.status(200).json(updatedFile);
+  } catch (err) {
+    console.error(`Error updating file ${req.params.id}:`, err);
+    return res.status(err.status || 500).json({ error: err.message || "Failed to update file" });
+  }
 }
 
+
 async function deleteFile(req, res) {
-    const file = getFileMetadata(req.params.id);
+    const file = await getFileMetadata(req.params.id);
     if (!file) return res.status(404).json({ error: "File not found" });
 
     try {

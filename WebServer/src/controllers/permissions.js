@@ -9,15 +9,15 @@ const {
 } = require("../models/permissions");
 
 
-function listPermissions(req, res) {
+async function listPermissions(req, res) {
     const ownerId = req.user.id;
     const fileId = req.params.id;
     //check if file exists and requesting user is the owner
-    const file = getFileMetadata(fileId);
-    if (!file || file.ownerId !== ownerId) {
+    const file = await getFileMetadata(fileId);
+    if (!file || file.ownerId.toString() !== ownerId.toString()) {
         return res.status(404).json({ error: "File not found" });
     }
-    const permissions = listPermissionsModel(fileId).map((perm) => ({
+    const permissions = (await listPermissionsModel(fileId)).map((perm) => ({
         id: perm.pid,
         userId: perm.userId,
         permissionType: perm.permissionType,
@@ -25,13 +25,13 @@ function listPermissions(req, res) {
     return res.status(200).json(permissions);
 }
 
-function addPermission(req, res) {
+ async function addPermission(req, res) {
     const ownerId = req.user.id;
     const fileId = req.params.id;
-    const file = getFileMetadata(fileId);
+    const file = await getFileMetadata(fileId);
 
     //check if file exists and user is its owner
-    if (!file || file.ownerId !== ownerId) {
+    if (!file || file.ownerId.toString() !== ownerId.toString()) {
         return res.status(404).json({ error: "File not found" });
     }
     
@@ -44,25 +44,25 @@ function addPermission(req, res) {
         return res.status(400).json({ error: "Invalid permissionType, must be 'read' or 'write'" });
     }
     
-    if (!getUserById(userId.trim())) {
+    if (!await getUserById(userId.trim())) {
         return res.status(400).json({ error: "User with the specified userId does not exist" });
     }
     // maybe check if you trying to add permission for the ownerId
-    const newPermission = addPermissionModel(fileId, userId.trim(), permissionType);
+    const newPermission = await addPermissionModel(fileId, userId.trim(), permissionType);
     if (!newPermission) {
         return res.status(409).json({ error: "Failed to add permission" });
     }
-    res.set("Location", `/api/files/${fileId}/permissions/${newPermission.pid}`);
+    res.set("Location", `/api/files/${fileId}/permissions/${newPermission._id}`);
     return res.status(201).send();
 }
 
-function updatePermission(req, res) {
+async function updatePermission(req, res) {
     const ownerId = req.user.id;
     const fileId = req.params.id;
     const permissionId = req.params.permissionId;
 
-    const file = getFileMetadata(fileId);
-    if (!file || file.ownerId !== ownerId) {
+    const file = await getFileMetadata(fileId);
+    if (!file || file.ownerId.toString() !== ownerId.toString()) {
         return res.status(404).json({ error: "File not found" });
     }
     const { permissionType } = req.body || {};
@@ -70,11 +70,11 @@ function updatePermission(req, res) {
     if (permissionType !== "read" && permissionType !== "write") {
         return res.status(400).json({ error: "Invalid permissionType, must be 'read' or 'write'" });
     }
-    const permission = getPermissionModel(permissionId);
-    if (!permission || permission.fileId !== fileId) {
+    const permission = await getPermissionModel(permissionId);
+    if (!permission || permission.fileId.toString() !== fileId.toString()) {
         return res.status(404).json({ error: "Permission not found for the specified file" });
     }
-    const success = updatePermissionModel(permissionId, permissionType);
+    const success = await updatePermissionModel(permissionId, permissionType);
     if (!success) {
         return res.status(404).json({ error: "Permission not found" });
     }
@@ -82,21 +82,20 @@ function updatePermission(req, res) {
     
 }
 
-function removePermission(req, res) {
+async function removePermission(req, res) {
     const ownerId = req.user.id;
     const fileId = req.params.id;
     const permissionId = req.params.permissionId;
-    const file = getFileMetadata(fileId);
-
-    if (!file || file.ownerId !== ownerId) {
+    const file = await getFileMetadata(fileId);
+    if (!file || file.ownerId.toString() !== ownerId.toString()) {
         return res.status(404).json({ error: "File not found" });
     }
     
-    const permission = getPermissionModel(permissionId);
-    if (!permission || permission.fileId !== fileId) {
+    const permission = await getPermissionModel(permissionId);
+    if (!permission || permission.fileId.toString() !== fileId.toString()) {
         return res.status(404).json({ error: "Permission not found for the specified file" });
     }
-    const success = removePermissionModel(permissionId);
+    const success = await removePermissionModel(permissionId);
     if (!success) {
         return res.status(404).json({ error: "Permission not found" });
     }

@@ -1,50 +1,47 @@
 const crypto = require("crypto");
+const UserSchema = require("./UserSchema");
+const mongoose = require("mongoose");
 
-const users = [];
+// we will now migrate to using MongoDB with Mongoose
 
-function createUser({username, password, name, image}) {
-    let finalUsername = username.trim();
-    if (users.some((user) => user.username === finalUsername)) {
+async function createUser({username, password, name, image}) {
+    try {
+    const newUser = new UserSchema({
+        username: username.trim(),
+        password,
+        name: name.trim(),
+        image,
+    });
+    return await newUser.save();
+} catch (err) {
+    if (err.code === 11000) {
         throw new Error("Username already exists.");
     }
-    if (password.length < 8) {
+    if (err.name === 'ValidationError' && err.errors.password && err.errors.password.kind === 'minlength') {
         throw new Error("Password must be at least 8 characters long.");
     }
-    
-    let id;
-    do {
-        id = crypto.randomUUID();
-    } while (users.some((user) => user.id === id));
-    const newUser = {
-        id,
-        username: finalUsername,
-        password,
-        name,
-        image,
-    };
-    users.push(newUser);
-    return newUser;
+    throw err;
+}
 }
 
-function getUserById(id) {
-    return users.find((user) => user.id === id) || null;
+async function getUserById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await UserSchema.findById(id);
 }
 
-function findUserByCredentials(username, password) {
-    return users.find((user) => user.username === username && user.password === password) || null;
+async function findUserByCredentials(username, password) {
+    return await UserSchema.findOne({ username, password }) || null;
 }   
 
-function getUserId(username) {
-  const user = users.find(u => u.username === username);
-  return user?.id;
+async function getUserId(username) {
+    const user = await UserSchema.findOne({ username });
+    return user ? user.id : null;
 }
-function setUserImage(userId, image) {
-    const user = getUserById(userId);
-    if (!user) {
-        throw new Error("User not found.");
-    }
+async function setUserImage(userId, image) {
+    const user = await UserSchema.findById(userId);
+    if (!user) throw new Error("User not found");
     user.image = image;
-    return user;
+    return user.save();
 }
 
 module.exports = {

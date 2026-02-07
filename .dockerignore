@@ -1,2 +1,6 @@
-build/
-tests/build/
+node_modules
+.git
+build
+dist
+*.log
+files/
