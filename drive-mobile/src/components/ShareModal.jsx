@@ -1,42 +1,19 @@
 import { useEffect, useState } from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import { Modal, View, Text, Pressable, StyleSheet, TextInput } from "react-native";
 import { colors, spacing, radius } from "../ui/tokens";
-import PromptModal from "./PromptModal";
 
 export default function ShareModal({ visible, file, onClose, onShare }) {
   const [username, setUsername] = useState("");
   const [perm, setPerm] = useState("read"); // 'read' | 'write'
-  const [step, setStep] = useState("form"); // 'form' | 'username'
 
   useEffect(() => {
     if (visible) {
       setUsername("");
       setPerm("read");
-      setStep("form");
     }
   }, [visible]);
 
   if (!visible) return null;
-
-  if (step === "username") {
-    return (
-      <PromptModal
-        visible={visible}
-        title={`Share "${file?.name ?? "item"}"`}
-        label="Username"
-        value={username}
-        onChangeValue={setUsername}
-        placeholder="e.g. alice"
-        confirmText="Next"
-        cancelText="Cancel"
-        onCancel={onClose}
-        onConfirm={() => {
-          if (!username.trim()) return;
-          setStep("form");
-        }}
-      />
-    );
-  }
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -46,12 +23,17 @@ export default function ShareModal({ visible, file, onClose, onShare }) {
             Share "{file?.name ?? "item"}"
           </Text>
 
-          <Pressable style={styles.userRow} onPress={() => setStep("username")}>
-            <Text style={styles.userLabel}>User</Text>
-            <Text style={styles.userValue} numberOfLines={1}>
-              {username.trim() ? username.trim() : "Tap to enter"}
-            </Text>
-          </Pressable>
+          <View style={styles.userRow}>
+            <Text style={styles.userLabel}>Username</Text>
+            <TextInput
+              value={username}
+              onChangeText={setUsername}
+              placeholder="e.g. alice"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              autoCapitalize="none"
+            />
+          </View>
 
           <Text style={styles.section}>Permission</Text>
           <View style={styles.permRow}>
@@ -113,6 +95,16 @@ const styles = StyleSheet.create({
   },
   userLabel: { color: colors.muted, fontWeight: "700", fontSize: 12 },
   userValue: { marginTop: 6, color: colors.text, fontWeight: "800" },
+  input: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    color: colors.text,
+  },
   section: { marginTop: spacing.md, color: colors.muted, fontWeight: "700", fontSize: 12 },
   permRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   permBtn: {
