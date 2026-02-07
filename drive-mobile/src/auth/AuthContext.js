@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getToken, removeToken, getStoredUser, setStoredUser, removeStoredUser } from "../api/api";
+import { getToken, removeToken, getStoredUser, setStoredUser, removeStoredUser, setUnauthorizedHandler } from "../api/api";
 
 // Create the context container that will hold our auth data
 const AuthContext = createContext(null);
@@ -32,6 +32,18 @@ export function AuthProvider({ children }) {
 
   // useMemo 'freezes' this object so it only updates when booting or isAuthed changes.
   // This prevents unnecessary screen re-renders, making the app faster.
+  const logout = async () => {
+    await removeToken();
+    await removeStoredUser();
+    setIsAuthed(false);
+    setUserState(null);
+  };
+
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       booting,
@@ -44,12 +56,7 @@ export function AuthProvider({ children }) {
         await setStoredUser(u || null);
       },
       // Clean up function: deletes the token from storage and updates the state
-      logout: async () => {
-        await removeToken();
-        await removeStoredUser();
-        setIsAuthed(false);
-        setUserState(null);
-      },
+      logout,
     }),
     [booting, isAuthed, user]
   );
