@@ -40,9 +40,11 @@ import CreateItemModal from "../components/CreateItemModal";
 import PromptModal from "../components/PromptModal";
 import ShareModal from "../components/ShareModal";
 import MovePickerModal from "../components/MovePickerModal";
+import ProfileMenuModal from "../components/ProfileMenuModal";
+import ProfilePhotoModal from "../components/ProfilePhotoModal";
 
 export default function DriveScreen() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   // --- State ---
   const [activeView, setActiveView] = useState("home"); 
@@ -75,10 +77,18 @@ export default function DriveScreen() {
 
   const [moveOpen, setMoveOpen] = useState(false);
   const [moveFile, setMoveFile] = useState(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profilePhotoOpen, setProfilePhotoOpen] = useState(false);
+  const avatarInitial = useMemo(() => {
+    const label = (user?.name || user?.username || "").trim();
+    return label ? label[0].toUpperCase() : "👤";
+  }, [user]);
+  const avatarUri = typeof user?.image === "string" && user.image.trim() ? user.image : null;
 
   // --- Filters ---
   const filters = useMemo(() => {
     if (activeView === "home") return parentId ? { parentId } : {}; 
+    if (activeView === "starred" && parentId) return { parentId };
     return { view: activeView, parentId: parentId ?? "" };
   }, [activeView, parentId]);
 
@@ -120,8 +130,13 @@ export default function DriveScreen() {
       return;
     }
     if (item.type === "folder") {
+      if (item.id === parentId) return;
       setParentId(item.id);
-      setCrumbs((prev) => [...prev, { id: item.id, name: item.name }]);
+      setCrumbs((prev) => {
+        const existingIndex = prev.findIndex((c) => c.id === item.id);
+        if (existingIndex >= 0) return prev.slice(0, existingIndex + 1);
+        return [...prev, { id: item.id, name: item.name }];
+      });
       return;
     }
     setSelected(item);
@@ -298,7 +313,9 @@ export default function DriveScreen() {
         onChangeSearch={setQ}
         onSubmitSearch={doSearch}
         onOpenMenu={() => setSideOpen(true)}
-        onAvatarPress={logout} // Directly calling logout now
+        onAvatarPress={() => setProfileMenuOpen(true)}
+        avatarUri={avatarUri}
+        avatarInitial={avatarInitial}
       />
 
       {crumbs.length > 1 && (
@@ -357,6 +374,30 @@ export default function DriveScreen() {
         visible={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreate={handleCreate}
+      />
+
+      <ProfileMenuModal
+        visible={profileMenuOpen}
+        user={user}
+        onClose={() => setProfileMenuOpen(false)}
+        onViewPhoto={() => {
+          setProfileMenuOpen(false);
+          setProfilePhotoOpen(true);
+        }}
+        onChangePhoto={() => {
+          setProfileMenuOpen(false);
+          Alert.alert("Not ready", "Profile photo upload will be added next step.");
+        }}
+        onLogout={async () => {
+          setProfileMenuOpen(false);
+          await logout();
+        }}
+      />
+
+      <ProfilePhotoModal
+        visible={profilePhotoOpen}
+        user={user}
+        onClose={() => setProfilePhotoOpen(false)}
       />
 
       <PromptModal

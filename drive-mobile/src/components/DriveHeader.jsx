@@ -1,5 +1,5 @@
 // src/components/DriveHeader.js
-import { View, Text, Pressable, TextInput, StyleSheet } from "react-native";
+import { View, Text, Pressable, TextInput, StyleSheet, Image } from "react-native";
 import { colors, spacing, radius } from "../ui/tokens";
 
 export default function DriveHeader({
@@ -9,7 +9,12 @@ export default function DriveHeader({
   onOpenMenu,
   onRightAction,   // Used for the "Sparkle/AI" action
   onAvatarPress,
+  avatarUri,
+  avatarInitial,
 }) {
+  const avatarLabel = avatarInitial || "👤";
+  const resolvedAvatarUri = typeof avatarUri === "string" && avatarUri.trim() ? avatarUri : null;
+
   return (
     <View style={styles.wrap}>
       {/* Menu Button (Hamburger) */}
@@ -41,7 +46,11 @@ export default function DriveHeader({
 
       {/* Profile/Avatar Button - currently shows a Greek 'lambda' as a placeholder */}
       <Pressable onPress={onAvatarPress} hitSlop={10} style={styles.avatar}>
-        <Text style={styles.avatarText}>λ</Text>
+        {resolvedAvatarUri ? (
+          <Image source={{ uri: resolvedAvatarUri }} style={styles.avatarImg} />
+        ) : (
+          <Text style={styles.avatarText}>{avatarLabel}</Text>
+        )}
       </Pressable>
     </View>
   );
@@ -91,6 +100,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
+    overflow: "hidden",
   },
   avatarText: { color: colors.primary, fontWeight: "900" },
+  avatarImg: { width: "100%", height: "100%" },
 });
