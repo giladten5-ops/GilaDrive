@@ -5,7 +5,7 @@ export default function DriveRow({ item, onPress, onMenuPress }) {
   const isFolder = item.type === "folder";
 
   return (
-    <Pressable onPress={onPress} style={styles.row}>
+    <Pressable onPress={() => onPress(item)} style={styles.row}>
       {/* Icon: Circular container with a simple emoji */}
       <View style={styles.iconWrap}>
         <Text style={styles.icon}>{isFolder ? "📁" : "📄"}</Text>
