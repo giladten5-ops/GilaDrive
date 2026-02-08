@@ -25,7 +25,7 @@ import {
   updateUserImage,
 } from "../api/api";
 import { useAuth } from "../auth/AuthContext";
-import { colors } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 import { pickDocument, pickImage } from "../utils/media";
 
 // Components
@@ -47,6 +47,7 @@ import ProfileMenuModal from "../components/ProfileMenuModal";
 import ProfilePhotoModal from "../components/ProfilePhotoModal";
 
 export default function DriveScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const { logout, user, setUser } = useAuth();
 
@@ -459,6 +460,13 @@ export default function DriveScreen() {
     ]);
   }
 
+  const styles = StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    center: { flex: 1, justifyContent: "center", alignItems: "center" },
+    crumbsWrap: { paddingHorizontal: 14, marginTop: 6 },
+    empty: { padding: 40, alignItems: "center" }
+  });
+
   return (
     <SafeAreaView style={styles.root}>
       <SideMenuModal
@@ -491,7 +499,7 @@ export default function DriveScreen() {
       <SectionHeader title={searchMode ? "Search Results" : "Files"} viewMode={viewMode} onToggleView={setViewMode} />
       
       {loading ? (
-        <View style={styles.center}><ActivityIndicator /></View>
+        <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
         <FlatList
           data={items}
@@ -503,7 +511,7 @@ export default function DriveScreen() {
               : <DriveRow item={item} onMenuPress={setMenuFile} onPress={openItem} />
           )}
           ListEmptyComponent={
-            <View style={styles.empty}>
+          <View style={styles.empty}>
               <Text style={{ color: colors.muted }}>{searchMode ? "No matches" : "No items"}</Text>
             </View>
           }
@@ -611,10 +619,3 @@ export default function DriveScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  crumbsWrap: { paddingHorizontal: 14, marginTop: 6 },
-  empty: { padding: 40, alignItems: "center" }
-});

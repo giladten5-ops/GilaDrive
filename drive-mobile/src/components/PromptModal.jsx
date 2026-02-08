@@ -9,7 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { colors, spacing, radius } from "../ui/tokens";
+import { spacing, radius } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 export default function PromptModal({
   visible,
@@ -26,6 +27,48 @@ export default function PromptModal({
   secureTextEntry = false,
   keyboardType = "default",
 }) {
+  const { colors } = useTheme();
+  const styles = StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      justifyContent: "center",
+      padding: spacing.lg,
+    },
+    sheet: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    title: { fontSize: 16, fontWeight: "800", color: colors.text },
+    label: { marginTop: spacing.sm, color: colors.muted, fontWeight: "600" },
+    input: {
+      marginTop: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+      color: colors.text,
+    },
+    inputMultiline: { height: 120, textAlignVertical: "top" },
+    row: { flexDirection: "row", marginTop: spacing.lg, gap: spacing.sm },
+    btn: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      paddingVertical: 12,
+      borderRadius: radius.md,
+      alignItems: "center",
+    },
+    btnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
+    btnText: { fontWeight: "800", color: colors.text },
+    btnPrimaryText: { color: "#fff" },
+  });
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
@@ -69,46 +112,3 @@ export default function PromptModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    padding: spacing.lg,
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  title: { fontSize: 16, fontWeight: "800", color: colors.text },
-  label: { marginTop: spacing.sm, color: colors.muted, fontWeight: "600" },
-  input: {
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    color: colors.text,
-  },
-  inputMultiline: { height: 120, textAlignVertical: "top" },
-  row: { flexDirection: "row", marginTop: spacing.lg, gap: spacing.sm },
-  btn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingVertical: 12,
-    borderRadius: radius.md,
-    alignItems: "center",
-  },
-  btnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
-  btnText: { fontWeight: "800", color: colors.text },
-  btnPrimaryText: { color: "#fff" },
-});
-

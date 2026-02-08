@@ -1,17 +1,104 @@
 // src/components/FileCard.js
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors, spacing, radius } from "../ui/tokens";
+import { spacing, radius } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 /**
  * FileCard: A grid-view component for files and folders.
  * It provides a visual preview and quick access to a contextual menu.
  */
 export default function FileCard({ item, onPress, onMenuPress }) {
+  const { colors } = useTheme();
   // Check if it's a folder to decide which icon and preview text to show
   const isFolder = item.type === "folder";
   
   // Get the brand color and label (PDF, DOC, etc.) based on the name extension
   const extTag = getExtTag(item?.name);
+
+  const styles = StyleSheet.create({
+    wrap: { 
+      marginHorizontal: spacing.md, 
+      marginTop: 12, 
+      marginBottom: 8 
+    },
+    topRow: { 
+      flexDirection: "row", 
+      alignItems: "center", 
+      paddingHorizontal: 6 
+    },
+    icon: { 
+      width: 26, 
+      textAlign: "center", 
+      marginRight: 10 
+    },
+    name: { 
+      flex: 1, 
+      fontSize: 16, 
+      fontWeight: "600", 
+      color: colors.text 
+    },
+    menuContainer: { 
+      padding: 4 
+    },
+    menu: { 
+      fontSize: 22, 
+      color: colors.muted, 
+      fontWeight: 'bold' 
+    },
+    preview: {
+      marginTop: 10,
+      height: 170,
+      borderRadius: radius.lg,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    previewTag: { 
+      paddingHorizontal: 18, 
+      paddingVertical: 10, 
+      borderRadius: 10, 
+      color: "#fff", 
+      fontWeight: "900" 
+    },
+    previewFolder: { 
+      color: colors.muted, 
+      fontWeight: "800" 
+    },
+    metaRow: { 
+      marginTop: 10, 
+      flexDirection: "row", 
+      alignItems: "center", 
+      paddingHorizontal: 6 
+    },
+    avatar: { 
+      width: 34, 
+      height: 34, 
+      borderRadius: 17, 
+      backgroundColor: colors.primary, 
+      alignItems: "center", 
+      justifyContent: "center", 
+      marginRight: 10 
+    },
+    avatarText: { 
+      color: "#fff", 
+      fontWeight: "800" 
+    },
+    metaMain: { 
+      color: colors.text, 
+      fontWeight: "700" 
+    },
+    metaSub: { 
+      color: colors.muted, 
+      marginTop: 2 
+    },
+    star: { 
+      color: colors.star, 
+      fontSize: 16, 
+      marginLeft: 10 
+    },
+  });
 
   return (
     /* The whole card is clickable to open the file or enter the folder.
@@ -84,88 +171,3 @@ function getExtTag(name) {
   // Default fallback for unknown file types
   return { label: "FILE", bg: "#5F6368" }; 
 }
-
-const styles = StyleSheet.create({
-  wrap: { 
-    marginHorizontal: spacing.md, 
-    marginTop: 12, 
-    marginBottom: 8 
-  },
-  topRow: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    paddingHorizontal: 6 
-  },
-  icon: { 
-    width: 26, 
-    textAlign: "center", 
-    marginRight: 10 
-  },
-  name: { 
-    flex: 1, 
-    fontSize: 16, 
-    fontWeight: "600", 
-    color: colors.text 
-  },
-  menuContainer: { 
-    padding: 4 
-  },
-  menu: { 
-    fontSize: 22, 
-    color: colors.muted, 
-    fontWeight: 'bold' 
-  },
-  preview: {
-    marginTop: 10,
-    height: 170, // Fixed height keeps the grid items uniform
-    borderRadius: radius.lg,
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  previewTag: { 
-    paddingHorizontal: 18, 
-    paddingVertical: 10, 
-    borderRadius: 10, 
-    color: "#fff", 
-    fontWeight: "900" 
-  },
-  previewFolder: { 
-    color: colors.muted, 
-    fontWeight: "800" 
-  },
-  metaRow: { 
-    marginTop: 10, 
-    flexDirection: "row", 
-    alignItems: "center", 
-    paddingHorizontal: 6 
-  },
-  avatar: { 
-    width: 34, 
-    height: 34, 
-    borderRadius: 17, 
-    backgroundColor: colors.primary, 
-    alignItems: "center", 
-    justifyContent: "center", 
-    marginRight: 10 
-  },
-  avatarText: { 
-    color: "#fff", 
-    fontWeight: "800" 
-  },
-  metaMain: { 
-    color: colors.text, 
-    fontWeight: "700" 
-  },
-  metaSub: { 
-    color: colors.muted, 
-    marginTop: 2 
-  },
-  star: { 
-    color: colors.star, 
-    fontSize: 16, 
-    marginLeft: 10 
-  },
-});

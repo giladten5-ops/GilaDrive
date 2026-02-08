@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Text, Button, View, TextInput, StyleSheet, ScrollView, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { registerUser } from "../api/api";
-import { colors } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 import { pickImage } from "../utils/media";
 
 export default function RegisterScreen({ goLogin, onRegistered }) {
+  const { colors } = useTheme();
   // Local state for the registration form fields
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
@@ -62,6 +63,53 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
     setImageErr("");
   }
 
+  const styles = StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    container: { padding: 20, justifyContent: "center", flexGrow: 1 },
+    title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: colors.text },
+    input: { 
+      borderWidth: 1, 
+      borderColor: colors.border, 
+      padding: 12, 
+      borderRadius: 8, 
+      marginBottom: 16, 
+      backgroundColor: colors.surface,
+      color: colors.text,
+    },
+    error: { color: colors.danger, marginBottom: 12, fontWeight: "600" },
+    photoBlock: {
+      marginBottom: 18,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    photoLabel: { color: colors.text, fontWeight: "700", marginBottom: 10 },
+    photoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    photo: { width: 74, height: 74, borderRadius: 37, backgroundColor: colors.bg },
+    photoFallback: {
+      width: 74,
+      height: 74,
+      borderRadius: 37,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    photoFallbackText: { color: "#fff", fontWeight: "800", fontSize: 28 },
+    photoBtn: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      backgroundColor: colors.bg,
+    },
+    photoBtnText: { color: colors.text, fontWeight: "700", fontSize: 13 },
+    photoBtnDanger: { backgroundColor: colors.surface },
+    photoBtnDangerText: { color: colors.danger },
+  });
+
   return (
     <SafeAreaView style={styles.root}>
       {/* ScrollView ensures the form is usable on smaller screens or when the keyboard pops up */}
@@ -72,6 +120,7 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
           value={name}
           onChangeText={setName}
           placeholder="Full Name"
+          placeholderTextColor={colors.muted}
           style={styles.input}
         />
 
@@ -80,6 +129,7 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
           onChangeText={setUsername}
           placeholder="Username"
           autoCapitalize="none"
+          placeholderTextColor={colors.muted}
           style={styles.input}
         />
 
@@ -88,6 +138,7 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
           onChangeText={setPassword}
           placeholder="Password"
           secureTextEntry
+          placeholderTextColor={colors.muted}
           style={styles.input}
         />
 
@@ -139,49 +190,3 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: 20, justifyContent: "center", flexGrow: 1 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: colors.text },
-  input: { 
-    borderWidth: 1, 
-    borderColor: colors.border, 
-    padding: 12, 
-    borderRadius: 8, 
-    marginBottom: 16, 
-    backgroundColor: colors.surface 
-  },
-  error: { color: colors.danger, marginBottom: 12, fontWeight: "600" },
-  photoBlock: {
-    marginBottom: 18,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  photoLabel: { color: colors.text, fontWeight: "700", marginBottom: 10 },
-  photoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  photo: { width: 74, height: 74, borderRadius: 37, backgroundColor: colors.bg },
-  photoFallback: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoFallbackText: { color: "#fff", fontWeight: "800", fontSize: 28 },
-  photoBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: colors.bg,
-  },
-  photoBtnText: { color: colors.text, fontWeight: "700", fontSize: 13 },
-  photoBtnDanger: { backgroundColor: colors.surface },
-  photoBtnDangerText: { color: colors.danger },
-});

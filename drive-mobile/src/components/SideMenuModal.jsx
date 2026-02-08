@@ -1,5 +1,6 @@
 import { Modal, View, Text, Pressable, StyleSheet, TouchableWithoutFeedback } from "react-native";
-import { colors, spacing, radius } from "../ui/tokens";
+import { spacing, radius } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 const ITEMS = [
   { key: "home", label: "My Drive" },
@@ -10,6 +11,31 @@ const ITEMS = [
 ];
 
 export default function SideMenuModal({ visible, active, onClose, onSelect, onLogout }) {
+  const { colors } = useTheme();
+  const styles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", flexDirection: "row" },
+    drawer: {
+      width: 280,
+      backgroundColor: colors.surface,
+      paddingTop: spacing.xl,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.lg,
+      borderRightWidth: 1,
+      borderRightColor: colors.border,
+    },
+    title: { fontSize: 20, fontWeight: "900", color: colors.text, marginBottom: spacing.lg },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      marginBottom: 6,
+    },
+    rowOn: { backgroundColor: colors.primary + "22" },
+    label: { color: colors.text, fontWeight: "800" },
+    labelOn: { color: colors.primary },
+  });
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -51,28 +77,3 @@ export default function SideMenuModal({ visible, active, onClose, onSelect, onLo
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", flexDirection: "row" },
-  drawer: {
-    width: 280,
-    backgroundColor: colors.surface,
-    paddingTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-  },
-  title: { fontSize: 20, fontWeight: "900", color: colors.text, marginBottom: spacing.lg },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: 6,
-  },
-  rowOn: { backgroundColor: "#E6F0FF" },
-  label: { color: colors.text, fontWeight: "800" },
-  labelOn: { color: colors.primary },
-});

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Modal, View, Text, Pressable, StyleSheet, TextInput } from "react-native";
-import { colors, spacing, radius } from "../ui/tokens";
+import { spacing, radius } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 export default function ShareModal({ visible, file, onClose, onShare }) {
+  const { colors } = useTheme();
   const [username, setUsername] = useState("");
   const [perm, setPerm] = useState("read"); // 'read' | 'write'
 
@@ -14,6 +16,71 @@ export default function ShareModal({ visible, file, onClose, onShare }) {
   }, [visible]);
 
   if (!visible) return null;
+
+  const styles = StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      justifyContent: "center",
+      padding: spacing.lg,
+    },
+    sheet: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    title: { fontSize: 16, fontWeight: "900", color: colors.text },
+    userRow: {
+      marginTop: spacing.md,
+      paddingVertical: 12,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    userLabel: { color: colors.muted, fontWeight: "700", fontSize: 12 },
+    userValue: { marginTop: 6, color: colors.text, fontWeight: "800" },
+    input: {
+      marginTop: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+      color: colors.text,
+    },
+    section: { marginTop: spacing.md, color: colors.muted, fontWeight: "700", fontSize: 12 },
+    permRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+    permBtn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: "center",
+    },
+    permBtnOn: { borderColor: colors.primary, backgroundColor: colors.primary + "22" },
+    permText: { color: colors.text, fontWeight: "800" },
+    permTextOn: { color: colors.primary },
+    actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
+    btn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: "center",
+    },
+    btnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
+    btnText: { fontWeight: "900", color: colors.text },
+    btnPrimaryText: { color: "#fff" },
+  });
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -68,69 +135,3 @@ export default function ShareModal({ visible, file, onClose, onShare }) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    padding: spacing.lg,
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  title: { fontSize: 16, fontWeight: "900", color: colors.text },
-  userRow: {
-    marginTop: spacing.md,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  userLabel: { color: colors.muted, fontWeight: "700", fontSize: 12 },
-  userValue: { marginTop: 6, color: colors.text, fontWeight: "800" },
-  input: {
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    color: colors.text,
-  },
-  section: { marginTop: spacing.md, color: colors.muted, fontWeight: "700", fontSize: 12 },
-  permRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
-  permBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-  },
-  permBtnOn: { borderColor: colors.primary, backgroundColor: "#E6F0FF" },
-  permText: { color: colors.text, fontWeight: "800" },
-  permTextOn: { color: colors.primary },
-  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.lg },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-  },
-  btnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
-  btnText: { fontWeight: "900", color: colors.text },
-  btnPrimaryText: { color: "#fff" },
-});
-

@@ -1,6 +1,6 @@
 // src/components/TextEditorModal.js
 import { Modal, View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { colors, spacing, radius } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 export default function TextEditorModal({
   visible,
@@ -11,6 +11,31 @@ export default function TextEditorModal({
   onClose,
   isSaving,
 }) {
+  const { colors } = useTheme();
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    header: {
+      height: 60,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    title: { flex: 1, textAlign: "center", fontWeight: "700", marginHorizontal: 10, color: colors.text },
+    cancelText: { color: colors.muted, fontWeight: "600" },
+    saveText: { color: colors.primary, fontWeight: "800", fontSize: 16 },
+    input: {
+      flex: 1,
+      padding: 20,
+      fontSize: 16,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.text,
+      textAlignVertical: "top",
+    },
+  });
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <KeyboardAvoidingView 
@@ -46,28 +71,3 @@ export default function TextEditorModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF5F7" }, // Very light pink/blush
-  header: {
-    height: 60,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#FFE0E9",
-  },
-  title: { flex: 1, textAlign: "center", fontWeight: "700", marginHorizontal: 10, color: "#D16A86" },
-  cancelText: { color: colors.muted, fontWeight: "600" },
-  saveText: { color: "#FF4D8D", fontWeight: "800", fontSize: 16 },
-  input: {
-    flex: 1,
-    padding: 20,
-    fontSize: 16,
-    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", // Coding feel
-    color: "#4A4A4A",
-    textAlignVertical: "top",
-  },
-});
