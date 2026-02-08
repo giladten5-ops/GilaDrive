@@ -111,6 +111,7 @@ export default function MovePickerModal({ visible, file, onClose, onMove }) {
                   setCrumbs((prev) => [...prev, { id: item.id, name: item.name }]);
                 }}
               >
+                <Text style={styles.rowIcon}>📁</Text>
                 <Text style={styles.rowText} numberOfLines={1}>
                   {item.name}
                 </Text>
@@ -171,6 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     marginBottom: spacing.sm,
   },
+  rowIcon: { width: 30, fontSize: 18 },
   rowText: { color: colors.text, fontWeight: "800", flex: 1 },
   bottom: {
     position: "absolute",
@@ -190,3 +192,4 @@ const styles = StyleSheet.create({
   },
   moveText: { color: "#fff", fontWeight: "900" },
 });
+
