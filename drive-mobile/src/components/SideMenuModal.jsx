@@ -2,11 +2,11 @@ import { Modal, View, Text, Pressable, StyleSheet, TouchableWithoutFeedback } fr
 import { colors, spacing, radius } from "../ui/tokens";
 
 const ITEMS = [
-  { key: "home", label: "My Drive", icon: "📁" },
-  { key: "recent", label: "Recent", icon: "🕒" },
-  { key: "starred", label: "Starred", icon: "⭐" },
-  { key: "shared", label: "Shared", icon: "👥" },
-  { key: "trash", label: "Trash", icon: "🗑️" },
+  { key: "home", label: "My Drive" },
+  { key: "recent", label: "Recent" },
+  { key: "starred", label: "Starred" },
+  { key: "shared", label: "Shared" },
+  { key: "trash", label: "Trash" },
 ];
 
 export default function SideMenuModal({ visible, active, onClose, onSelect, onLogout }) {
@@ -29,7 +29,6 @@ export default function SideMenuModal({ visible, active, onClose, onSelect, onLo
                     }}
                     style={[styles.row, on && styles.rowOn]}
                   >
-                    <Text style={styles.icon}>{it.icon}</Text>
                     <Text style={[styles.label, on && styles.labelOn]}>{it.label}</Text>
                   </Pressable>
                 );
@@ -43,7 +42,6 @@ export default function SideMenuModal({ visible, active, onClose, onSelect, onLo
                 }}
                 style={[styles.row, { borderColor: colors.border }]}
               >
-                <Text style={styles.icon}>⇥</Text>
                 <Text style={[styles.label, { color: colors.danger }]}>Logout</Text>
               </Pressable>
             </View>
@@ -75,8 +73,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   rowOn: { backgroundColor: "#E6F0FF" },
-  icon: { width: 28, fontSize: 16 },
   label: { color: colors.text, fontWeight: "800" },
   labelOn: { color: colors.primary },
 });
-

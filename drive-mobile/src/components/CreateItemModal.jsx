@@ -52,18 +52,11 @@ export default function CreateItemModal({ visible, onClose, onCreate, onUploadFr
           <Text style={styles.title}>Create</Text>
 
           <Pressable style={styles.rowBtn} onPress={() => setStep("folder")}>
-            <Text style={styles.rowIcon}>📁</Text>
             <Text style={styles.rowText}>Folder</Text>
           </Pressable>
 
           <Pressable style={styles.rowBtn} onPress={() => setStep("file")}>
-            <Text style={styles.rowIcon}>📄</Text>
             <Text style={styles.rowText}>File</Text>
-          </Pressable>
-
-          <Pressable style={styles.rowBtn} onPress={onUploadFromDevice}>
-            <Text style={styles.rowIcon}>⬆️</Text>
-            <Text style={styles.rowText}>Upload from device</Text>
           </Pressable>
 
           <View style={{ height: spacing.md }} />
@@ -102,7 +95,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     marginBottom: spacing.sm,
   },
-  rowIcon: { width: 34, fontSize: 18 },
   rowText: { color: colors.text, fontWeight: "800" },
   cancelBtn: {
     paddingVertical: 12,

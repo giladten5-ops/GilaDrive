@@ -1,5 +1,5 @@
 // src/screens/DriveScreen.js
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { 
   View, 
   Text, 
@@ -9,6 +9,7 @@ import {
   Alert,
   InteractionManager,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   listFiles,
@@ -31,7 +32,6 @@ import { pickDocument, pickImage } from "../utils/media";
 import DriveHeader from "../components/DriveHeader";
 import SectionHeader from "../components/SectionHeader";
 import BottomTabs from "../components/BottomTabs";
-import NewFab from "../components/NewFab";
 import FileCard from "../components/FileCard";
 import DriveRow from "../components/DriveRow";
 import Breadcrumbs from "../components/BreadCrumbs";
@@ -47,6 +47,7 @@ import ProfileMenuModal from "../components/ProfileMenuModal";
 import ProfilePhotoModal from "../components/ProfilePhotoModal";
 
 export default function DriveScreen() {
+  const navigation = useNavigation();
   const { logout, user, setUser } = useAuth();
 
   // --- State ---
@@ -90,7 +91,7 @@ export default function DriveScreen() {
   const [profilePhotoOpen, setProfilePhotoOpen] = useState(false);
   const avatarInitial = useMemo(() => {
     const label = (user?.name || user?.username || "").trim();
-    return label ? label[0].toUpperCase() : "👤";
+    return label ? label[0].toUpperCase() : "U";
   }, [user]);
   const avatarUri = typeof user?.image === "string" && user.image.trim() ? user.image : null;
 
@@ -100,6 +101,17 @@ export default function DriveScreen() {
     if (activeView === "starred" && parentId) return { parentId };
     return { view: activeView, parentId: parentId ?? "" };
   }, [activeView, parentId]);
+
+  useLayoutEffect(() => {
+    const titles = {
+      home: "Home",
+      recent: "Recents",
+      starred: "Starred",
+      shared: "Shared",
+      trash: "Trash",
+    };
+    navigation.setOptions({ title: titles[activeView] || "Home" });
+  }, [activeView, navigation]);
 
   // --- Fetching ---
   async function refresh() {
@@ -120,6 +132,10 @@ export default function DriveScreen() {
     setQ("");
     refresh(); 
   }, [activeView, parentId]);
+
+  useEffect(() => {
+    setViewMode("grid");
+  }, [activeView]);
 
   function setView(nextView) {
     setActiveView(nextView);
@@ -263,6 +279,10 @@ export default function DriveScreen() {
   };
 
   async function handleCreate({ type, name, content }) {
+    if (activeView !== "home") {
+      Alert.alert("Not available", "Create is only available in My Drive.");
+      return;
+    }
     const normalizedParentId =
       parentId == null || parentId === "" || parentId === "null" || parentId === "undefined"
         ? null
@@ -331,6 +351,10 @@ export default function DriveScreen() {
   }
 
   function handleUploadFromDevice() {
+    if (activeView !== "home") {
+      Alert.alert("Not available", "Upload is only available in My Drive.");
+      return;
+    }
     pendingDocPick.current = true;
     setCreateOpen(false);
     setTimeout(() => {
@@ -486,11 +510,17 @@ export default function DriveScreen() {
         />
       )}
 
-      {activeView === "home" ? <NewFab onPress={() => setCreateOpen(true)} /> : null}
-
       <BottomTabs 
-        active={activeView} 
-        onChange={(k) => setView(k)} 
+        active={activeView === "home" ? "home" : ""} 
+        onHome={() => setView("home")} 
+        onCreate={() => {
+          if (activeView !== "home") {
+            Alert.alert("Not available", "Create is only available in My Drive.");
+            return;
+          }
+          setCreateOpen(true);
+        }}
+        onUpload={handleUploadFromDevice}
       />
 
       <TextEditorModal
