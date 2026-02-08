@@ -11,13 +11,29 @@ const { listFiles: listFilesModel,
     restoreFile } = require("../models/files");
     const userModel = require("../models/users");
 
+function normalizeParentId(value) {
+    if (value == null) return null;
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed === "" || trimmed === "null" || trimmed === "undefined") return null;
+        return trimmed;
+    }
+    if (typeof value === "object") {
+        if (typeof value.id === "string") return normalizeParentId(value.id);
+        if (typeof value._id === "string") return normalizeParentId(value._id);
+        return null;
+    }
+    return value;
+}
+
 //list all files for the authenticated user, optionally filtered by parentId (null for root files)
 async function listFiles(req, res) {
     const { parentId, view } = req.query; // "trash", "starred", etc....
-    const pid = parentId == null || parentId === "null" || parentId === "" ? null : String(parentId);
+    const pid = normalizeParentId(parentId);
+    const pidString = pid == null ? null : String(pid);
 
     // returns all files with the relevent filters
-    const rawFiles = await listFilesModel(req.user.id, pid, view);
+    const rawFiles = await listFilesModel(req.user.id, pidString, view);
     const files = rawFiles.map(file => ({
         id: file.id,
         name: file.name ?? file.filename,
@@ -44,9 +60,10 @@ async function createFile(req, res) {
         return res.status(400).json({ error: "Type must be either 'file' or 'folder'" });
     }
 
-    const pid = parentId == null || parentId === "null" || parentId === "" ? null : String(parentId);
-    if (pid) {
-        const parentFile = await getFileMetadata(pid);
+    const pid = normalizeParentId(parentId);
+    const pidString = pid == null ? null : String(pid);
+    if (pidString) {
+        const parentFile = await getFileMetadata(pidString);
         if (!parentFile || parentFile.type !== "folder") {
             return res.status(400).json({ error: "Invalid parentId" });
         }
@@ -58,7 +75,7 @@ async function createFile(req, res) {
             ownerId: req.user.id,
             ownerName: req.user.username,
             type,
-            parentId: pid,
+            parentId: pidString,
             content,
         });
 
@@ -142,4 +159,3 @@ async function deleteFile(req, res) {
 
 
 module.exports = { listFiles, createFile, getFile, updateFile, deleteFile };
-

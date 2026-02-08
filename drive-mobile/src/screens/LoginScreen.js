@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Text, Button, View, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { loginUser, setToken } from "../api/api"; // adjust path if needed
+import { useAuth } from "../auth/AuthContext";
 
 export default function Login({ goHome, onLoggedIn }) {
+  const { setUser } = useAuth();
   // We use local state to 'control' the inputs. 
   // This means the screen knows exactly what is typed at every moment.
   const [username, setUsername] = useState("");
@@ -30,6 +32,12 @@ export default function Login({ goHome, onLoggedIn }) {
 
       // Save the token to local storage (AsyncStorage) so the app remembers who you are.
       await setToken(token);
+      await setUser({
+        userId: data?.userId ?? null,
+        username: username.trim(),
+        name: data?.name ?? username.trim(),
+        image: data?.image ?? null,
+      });
 
       // This callback tells the 'RootNavigator' to switch from Guest screens to the Drive screen.
       if (onLoggedIn) onLoggedIn();

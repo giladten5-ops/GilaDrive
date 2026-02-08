@@ -14,6 +14,21 @@ const mongoose = require("mongoose");
 async function getFileMetadata(id) {
   return FileSchema.findById(id);
 }
+
+function normalizeParentId(value) {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "" || trimmed === "null" || trimmed === "undefined") return null;
+    return trimmed;
+  }
+  if (typeof value === "object") {
+    if (typeof value.id === "string") return normalizeParentId(value.id);
+    if (typeof value._id === "string") return normalizeParentId(value._id);
+    return null;
+  }
+  return value;
+}
 function attachIsStarredField(fileDoc, userId) {
   const file = fileDoc.toObject();
   file.id = file._id.toString();

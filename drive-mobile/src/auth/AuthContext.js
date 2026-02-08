@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getToken, removeToken } from "../api/api";
+import { getToken, removeToken, getStoredUser, setStoredUser, removeStoredUser, setUnauthorizedHandler } from "../api/api";
 
 // Create the context container that will hold our auth data
 const AuthContext = createContext(null);
@@ -9,15 +9,20 @@ export function AuthProvider({ children }) {
   const [booting, setBooting] = useState(true);
   // 'isAuthed' is the source of truth for whether the user sees the Login or Drive screen
   const [isAuthed, setIsAuthed] = useState(false);
+  const [user, setUserState] = useState(null);
 
   // This runs exactly once when the app first opens
   useEffect(() => {
     (async () => {
       try {
-        // Look in AsyncStorage for a saved token from a previous session
         const token = await getToken();
-        // The !! converts the token string into a simple true/false
         setIsAuthed(!!token);
+        if (token) {
+          const stored = await getStoredUser();
+          setUserState(stored);
+        } else {
+          setUserState(null);
+        }
       } finally {
         // Once the check is done, we stop booting (this hides any splash screen)
         setBooting(false);
@@ -27,19 +32,33 @@ export function AuthProvider({ children }) {
 
   // useMemo 'freezes' this object so it only updates when booting or isAuthed changes.
   // This prevents unnecessary screen re-renders, making the app faster.
+  const logout = async () => {
+    await removeToken();
+    await removeStoredUser();
+    setIsAuthed(false);
+    setUserState(null);
+  };
+
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       booting,
       isAuthed,
+      user,
       // Helper function to manually set the auth status (used after Login)
       setAuthed: (v) => setIsAuthed(!!v),
-      // Clean up function: deletes the token from storage and updates the state
-      logout: async () => {
-        await removeToken();
-        setIsAuthed(false);
+      setUser: async (u) => {
+        setUserState(u || null);
+        await setStoredUser(u || null);
       },
+      // Clean up function: deletes the token from storage and updates the state
+      logout,
     }),
-    [booting, isAuthed]
+    [booting, isAuthed, user]
   );
 
   // We wrap the entire app in this Provider so any component can 'tune in' to the auth state
