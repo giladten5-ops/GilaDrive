@@ -3,7 +3,7 @@ import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
 import { colors, spacing, radius } from "../ui/tokens";
 import PromptModal from "./PromptModal";
 
-export default function CreateItemModal({ visible, onClose, onCreate }) {
+export default function CreateItemModal({ visible, onClose, onCreate, onUploadFromDevice, onAfterClose }) {
   const [step, setStep] = useState(null); // null | 'folder' | 'file'
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
@@ -40,7 +40,13 @@ export default function CreateItemModal({ visible, onClose, onCreate }) {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      onDismiss={onAfterClose}
+    >
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <Text style={styles.title}>Create</Text>
@@ -53,6 +59,11 @@ export default function CreateItemModal({ visible, onClose, onCreate }) {
           <Pressable style={styles.rowBtn} onPress={() => setStep("file")}>
             <Text style={styles.rowIcon}>📄</Text>
             <Text style={styles.rowText}>File</Text>
+          </Pressable>
+
+          <Pressable style={styles.rowBtn} onPress={onUploadFromDevice}>
+            <Text style={styles.rowIcon}>⬆️</Text>
+            <Text style={styles.rowText}>Upload from device</Text>
           </Pressable>
 
           <View style={{ height: spacing.md }} />
@@ -103,4 +114,3 @@ const styles = StyleSheet.create({
   },
   cancelText: { color: colors.muted, fontWeight: "800" },
 });
-

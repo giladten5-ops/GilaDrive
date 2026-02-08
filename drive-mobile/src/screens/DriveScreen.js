@@ -6,7 +6,8 @@ import {
   FlatList, 
   ActivityIndicator, 
   StyleSheet, 
-  Alert 
+  Alert,
+  InteractionManager,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -20,9 +21,11 @@ import {
   uploadFile,
   getUserId,
   addPermission,
+  updateUserImage,
 } from "../api/api";
 import { useAuth } from "../auth/AuthContext";
 import { colors } from "../ui/tokens";
+import { pickDocument, pickImage } from "../utils/media";
 
 // Components
 import DriveHeader from "../components/DriveHeader";
@@ -44,7 +47,7 @@ import ProfileMenuModal from "../components/ProfileMenuModal";
 import ProfilePhotoModal from "../components/ProfilePhotoModal";
 
 export default function DriveScreen() {
-  const { logout, user } = useAuth();
+  const { logout, user, setUser } = useAuth();
 
   // --- State ---
   const [activeView, setActiveView] = useState("home"); 
@@ -63,10 +66,16 @@ export default function DriveScreen() {
   const [menuFile, setMenuFile] = useState(null);
   const [selected, setSelected] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsContent, setDetailsContent] = useState("");
+  const [detailsError, setDetailsError] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editContent, setEditContent] = useState(""); 
   const [isSaving, setIsSaving] = useState(false);
   const requestId = useRef(0);
+  const detailsRequestId = useRef(0);
+  const pickDocInFlight = useRef(false);
+  const pickDocTimeout = useRef(null);
+  const pendingDocPick = useRef(false);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
@@ -121,7 +130,7 @@ export default function DriveScreen() {
   // --- Actions ---
   const isImage = (name) => {
     const ext = String(name || "").toLowerCase().split('.').pop();
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp'].includes(ext);
   };
 
   async function openItem(item) {
@@ -142,6 +151,17 @@ export default function DriveScreen() {
     setSelected(item);
     if (isImage(item.name)) {
       setDetailsOpen(true);
+      setDetailsContent("");
+      setDetailsError("");
+      const id = ++detailsRequestId.current;
+      try {
+        const data = await getFile(item.id);
+        if (detailsRequestId.current !== id) return;
+        setDetailsContent(data?.content ?? "");
+      } catch (e) {
+        if (detailsRequestId.current !== id) return;
+        setDetailsError(e.message || "Failed to load file.");
+      }
     } else {
       setIsEditorOpen(true);
       setEditContent("Loading...");
@@ -262,6 +282,99 @@ export default function DriveScreen() {
     }
   }
 
+  function resetPickDocLock() {
+    pickDocInFlight.current = false;
+    if (pickDocTimeout.current) {
+      clearTimeout(pickDocTimeout.current);
+      pickDocTimeout.current = null;
+    }
+  }
+
+  async function launchDocumentPicker() {
+    if (pickDocInFlight.current) {
+      Alert.alert("Please wait", "File picker is already open.");
+      return;
+    }
+    pickDocInFlight.current = true;
+    pickDocTimeout.current = setTimeout(() => {
+      resetPickDocLock();
+    }, 12000);
+    try {
+      await new Promise((resolve) => InteractionManager.runAfterInteractions(resolve));
+      const picked = await pickDocument();
+      if (!picked) return;
+
+      const normalizedParentId =
+        parentId == null || parentId === "" || parentId === "null" || parentId === "undefined"
+          ? null
+          : parentId;
+
+      const payload = {
+        name: picked.name,
+        type: "file",
+        content: picked.content ?? "",
+      };
+      if (normalizedParentId) payload.parentId = normalizedParentId;
+      await uploadFile(payload);
+      refresh();
+      Alert.alert("Uploaded", picked.name);
+    } catch (e) {
+      const message = String(e?.message || "");
+      if (message.includes("picking in progress")) {
+        Alert.alert("Please wait", "File picker is already open.");
+        return;
+      }
+      Alert.alert("Upload failed", message || "Upload failed.");
+    } finally {
+      resetPickDocLock();
+    }
+  }
+
+  function handleUploadFromDevice() {
+    pendingDocPick.current = true;
+    setCreateOpen(false);
+    setTimeout(() => {
+      if (!pendingDocPick.current) return;
+      pendingDocPick.current = false;
+      launchDocumentPicker();
+    }, 500);
+  }
+
+  function handleCreateModalDismiss() {
+    if (!pendingDocPick.current) return;
+    pendingDocPick.current = false;
+    launchDocumentPicker();
+  }
+
+  async function handleProfilePhotoChange(fromCamera) {
+    if (!user?.userId) {
+      Alert.alert("Error", "User info not ready.");
+      return;
+    }
+    try {
+      const picked = await pickImage({ fromCamera });
+      if (!picked) return;
+      await updateUserImage(user.userId, picked.dataUrl);
+      await setUser({ ...user, image: picked.dataUrl });
+      Alert.alert("Updated", "Profile photo updated.");
+    } catch (e) {
+      Alert.alert("Update failed", e.message || "Failed to update photo.");
+    }
+  }
+
+  async function handleProfilePhotoRemove() {
+    if (!user?.userId) {
+      Alert.alert("Error", "User info not ready.");
+      return;
+    }
+    try {
+      await updateUserImage(user.userId, "");
+      await setUser({ ...user, image: null });
+    } catch (e) {
+      Alert.alert("Update failed", e.message || "Failed to remove photo.");
+    }
+  }
+
   async function handleRenameConfirm() {
     const file = renameFile;
     const next = renameValue.trim();
@@ -296,6 +409,30 @@ export default function DriveScreen() {
     } catch (e) {
       Alert.alert("Error", e.message || "Move failed.");
     }
+  }
+
+  async function handleDetailsDelete() {
+    if (!selected) return;
+    const title = selected.isTrashed ? "Delete forever?" : "Move to trash?";
+    const msg = selected.isTrashed
+      ? "This will permanently delete the item."
+      : "You can restore it from Trash later.";
+    Alert.alert(title, msg, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: selected.isTrashed ? "Delete" : "Move",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteFile(selected.id);
+            setDetailsOpen(false);
+            refresh();
+          } catch (e) {
+            Alert.alert("Error", e.message || "Delete failed.");
+          }
+        },
+      },
+    ]);
   }
 
   return (
@@ -366,7 +503,15 @@ export default function DriveScreen() {
         isSaving={isSaving}
       />
 
-      <FileDetailsModal open={detailsOpen} file={selected} onClose={() => setDetailsOpen(false)} onStarToggle={() => handleToggleStar(selected)} />
+      <FileDetailsModal
+        open={detailsOpen}
+        file={selected}
+        content={detailsContent}
+        contentError={detailsError}
+        onClose={() => setDetailsOpen(false)}
+        onStarToggle={() => handleToggleStar(selected)}
+        onDelete={handleDetailsDelete}
+      />
       
       <FileOptionsMenu visible={!!menuFile} file={menuFile} onClose={() => setMenuFile(null)} onAction={handleMenuAction} />
 
@@ -374,6 +519,8 @@ export default function DriveScreen() {
         visible={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreate={handleCreate}
+        onUploadFromDevice={handleUploadFromDevice}
+        onAfterClose={handleCreateModalDismiss}
       />
 
       <ProfileMenuModal
@@ -386,7 +533,12 @@ export default function DriveScreen() {
         }}
         onChangePhoto={() => {
           setProfileMenuOpen(false);
-          Alert.alert("Not ready", "Profile photo upload will be added next step.");
+          Alert.alert("Change profile picture", "Select a source", [
+            { text: "Camera", onPress: () => handleProfilePhotoChange(true) },
+            { text: "Gallery", onPress: () => handleProfilePhotoChange(false) },
+            { text: "Remove", style: "destructive", onPress: handleProfilePhotoRemove },
+            { text: "Cancel", style: "cancel" },
+          ]);
         }}
         onLogout={async () => {
           setProfileMenuOpen(false);
