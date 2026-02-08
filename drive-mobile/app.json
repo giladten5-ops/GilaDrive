@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "drive-mobile",
-    "slug": "drive-mobile",
+    "name": "Benni squad drive",
+    "slug": "benni-squad-drive",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
