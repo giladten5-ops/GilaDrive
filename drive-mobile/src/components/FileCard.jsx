@@ -22,7 +22,7 @@ export default function FileCard({ item, onPress, onMenuPress }) {
       {/* 1. Top Row: Icon, Filename, and the Options Menu button */}
       <View style={styles.topRow}>
         <Text style={styles.icon}>{isFolder ? "📁" : "📄"}</Text>
-        
+
         {/* numberOfLines={1} prevents long names from pushing the menu button off-screen */}
         <Text style={styles.name} numberOfLines={1}>
           {item.name}
