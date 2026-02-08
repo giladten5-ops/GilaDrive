@@ -10,18 +10,19 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
 
   const options = isTrashed
     ? [
-        { id: "restore", label: "Restore" },
-        { id: "delete", label: "Delete forever", color: colors.danger },
+        { id: "restore", label: "Restore", icon: "⤴︎" },
+        { id: "delete", label: "Delete forever", icon: "🗑️", color: colors.danger },
       ]
     : [
         {
           id: "star",
           label: isStarred ? "Remove from starred" : "Add to starred",
+          icon: isStarred ? "⭐" : "☆",
         },
-        { id: "rename", label: "Rename" },
-        { id: "share", label: "Share" },
-        { id: "move", label: "Move to" },
-        { id: "delete", label: "Move to trash", color: colors.danger },
+        { id: "rename", label: "Rename", icon: "✎" },
+        { id: "share", label: "Share", icon: "🔗" },
+        { id: "move", label: "Move to", icon: "📁" },
+        { id: "delete", label: "Move to trash", icon: "🗑️", color: colors.danger },
       ];
 
   return (
@@ -33,6 +34,9 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
               <View style={styles.handle} />
 
               <View style={styles.header}>
+                <View style={styles.fileIcon}>
+                   <Text style={{fontSize: 20}}>{file.name?.endsWith('.pdf') ? '📕' : '📄'}</Text>
+                </View>
                 <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
               </View>
 
@@ -47,6 +51,7 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
                     onClose();
                   }}
                 >
+                  <Text style={styles.optionIcon}>{opt.icon}</Text>
                   <Text style={[styles.optionLabel, opt.color ? { color: opt.color } : null]}>
                     {opt.label}
                   </Text>
@@ -81,9 +86,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   header: { flexDirection: 'row', alignItems: 'center', padding: 24 },
+  fileIcon: { marginRight: 16 },
   fileName: { fontSize: 16, fontWeight: '500', color: colors.text, flex: 1 },
   divider: { height: 1, backgroundColor: colors.border, marginBottom: 8 },
   optionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24 },
   pressed: { backgroundColor: 'rgba(0,0,0,0.05)' },
+  optionIcon: { fontSize: 20, width: 40, textAlign: 'center', color: colors.text },
   optionLabel: { fontSize: 16, color: colors.text },
 });

@@ -1,5 +1,5 @@
 // src/components/FileDetailsModal.js
-import { Modal, View, Text, Pressable, ScrollView, StyleSheet, Image } from "react-native";
+import { Modal, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { colors } from "../ui/tokens";
 
 export default function FileDetailsModal({
@@ -14,7 +14,6 @@ export default function FileDetailsModal({
   // Logic helpers for conditional rendering
   const isFile = file?.type === "file";
   const starred = !!file?.isStarred; // Standard "double-bang" to ensure a boolean
-  const isImageContent = typeof content === "string" && content.startsWith("data:image/");
 
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose}>
@@ -64,11 +63,9 @@ export default function FileDetailsModal({
               <Text style={styles.primaryBtnText}>{starred ? "Unstar" : "Star"}</Text>
             </Pressable>
 
-            {onDelete ? (
-              <Pressable onPress={onDelete} style={styles.dangerBtn}>
-                <Text style={styles.dangerBtnText}>Delete</Text>
-              </Pressable>
-            ) : null}
+            <Pressable onPress={onDelete} style={styles.dangerBtn}>
+              <Text style={styles.dangerBtnText}>Delete</Text>
+            </Pressable>
           </View>
 
           {/* 3. CONTENT SECTION: Only rendered if the item is a file */}
@@ -82,10 +79,6 @@ export default function FileDetailsModal({
               {contentError ? (
                 <View style={styles.errorBox}>
                   <Text style={styles.errorText}>{contentError}</Text>
-                </View>
-              ) : isImageContent ? (
-                <View style={styles.contentBox}>
-                  <Image source={{ uri: content }} style={styles.imagePreview} />
                 </View>
               ) : (
                 <View style={styles.contentBox}>
@@ -191,7 +184,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   contentText: { color: colors.text, lineHeight: 20 },
-  imagePreview: { width: "100%", height: 260, resizeMode: "contain" },
 
   errorBox: {
     backgroundColor: colors.surface,

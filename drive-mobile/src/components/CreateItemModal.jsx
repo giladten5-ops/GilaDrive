@@ -3,7 +3,7 @@ import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
 import { colors, spacing, radius } from "../ui/tokens";
 import PromptModal from "./PromptModal";
 
-export default function CreateItemModal({ visible, onClose, onCreate, onUploadFromDevice, onAfterClose }) {
+export default function CreateItemModal({ visible, onClose, onCreate }) {
   const [step, setStep] = useState(null); // null | 'folder' | 'file'
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
@@ -40,22 +40,18 @@ export default function CreateItemModal({ visible, onClose, onCreate, onUploadFr
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      onDismiss={onAfterClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <Text style={styles.title}>Create</Text>
 
           <Pressable style={styles.rowBtn} onPress={() => setStep("folder")}>
+            <Text style={styles.rowIcon}>📁</Text>
             <Text style={styles.rowText}>Folder</Text>
           </Pressable>
 
           <Pressable style={styles.rowBtn} onPress={() => setStep("file")}>
+            <Text style={styles.rowIcon}>📄</Text>
             <Text style={styles.rowText}>File</Text>
           </Pressable>
 
@@ -95,6 +91,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     marginBottom: spacing.sm,
   },
+  rowIcon: { width: 34, fontSize: 18 },
   rowText: { color: colors.text, fontWeight: "800" },
   cancelBtn: {
     paddingVertical: 12,
@@ -106,3 +103,4 @@ const styles = StyleSheet.create({
   },
   cancelText: { color: colors.muted, fontWeight: "800" },
 });
+

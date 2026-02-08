@@ -7,11 +7,12 @@ export default function DriveHeader({
   onChangeSearch,
   onSubmitSearch,
   onOpenMenu,
+  onRightAction,   // Used for the "Sparkle/AI" action
   onAvatarPress,
   avatarUri,
   avatarInitial,
 }) {
-  const avatarLabel = avatarInitial || "U";
+  const avatarLabel = avatarInitial || "👤";
   const resolvedAvatarUri = typeof avatarUri === "string" && avatarUri.trim() ? avatarUri : null;
 
   return (
@@ -37,6 +38,11 @@ export default function DriveHeader({
           autoCapitalize="none"
         />
       </View>
+
+      {/* Sparkle Action Button */}
+      <Pressable onPress={onRightAction} hitSlop={10} style={styles.iconBtn}>
+        <Text style={styles.icon}>✦</Text>
+      </Pressable>
 
       {/* Profile/Avatar Button - currently shows a Greek 'lambda' as a placeholder */}
       <Pressable onPress={onAvatarPress} hitSlop={10} style={styles.avatar}>
