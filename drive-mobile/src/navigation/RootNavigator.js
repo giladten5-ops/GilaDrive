@@ -4,6 +4,7 @@ import LoginScreen from "../screens/LoginScreen";
 import DriveScreen from "../screens/DriveScreen";
 import RegisterScreen from "../screens/registrationScreen";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../ui/theme";
 
 // Create the Stack object which provides the 'Navigator' and 'Screen' components
 const Stack = createNativeStackNavigator();
@@ -11,13 +12,20 @@ const Stack = createNativeStackNavigator();
 export default function RootNavigator() {
   // We pull 'booting' and 'isAuthed' from our global context
   const { booting, isAuthed, setAuthed } = useAuth();
+  const { colors } = useTheme();
 
   // If the app is still checking for a token in storage, render nothing (or a splash screen)
   // This prevents the user from seeing the Login screen for a split second before being logged in
   if (booting) return null;
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+      }}
+    >
       {/* CONDITIONAL NAVIGATION BLOCK:
           If the user is NOT authenticated (!isAuthed), we render the Guest Stack.
           If they ARE authenticated, we render the Drive Stack.

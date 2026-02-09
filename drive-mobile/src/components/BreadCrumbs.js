@@ -1,10 +1,38 @@
 // src/components/Breadcrumbs.js
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 export default function Breadcrumbs({ crumbs, onCrumbPress }) {
+  const { colors } = useTheme();
   // Safety check: if there are no crumbs, don't render anything at all
   if (!Array.isArray(crumbs) || crumbs.length === 0) return null;
+
+  const styles = StyleSheet.create({
+    wrap: {
+      flexDirection: "row",
+      flexWrap: "wrap", 
+      alignItems: "center",
+    },
+    part: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginRight: 6,
+      marginBottom: 6,
+    },
+    btn: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    pressed: { opacity: 0.7 },
+    text: { maxWidth: 180, fontSize: 12.5 },
+    link: { color: colors.primary, fontWeight: "700" },
+    last: { color: colors.text, fontWeight: "700" },
+    sep: { marginHorizontal: 6, color: colors.muted, fontSize: 16, marginTop: -1 },
+  });
 
   return (
     <View style={styles.wrap}>
@@ -39,33 +67,3 @@ export default function Breadcrumbs({ crumbs, onCrumbPress }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    flexDirection: "row",
-    // 'flexWrap: wrap' ensures that if the path is very long, it flows to the next line
-    flexWrap: "wrap", 
-    alignItems: "center",
-  },
-  part: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  btn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999, // Makes the breadcrumb look like a pill/capsule
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pressed: { opacity: 0.7 },
-  text: { maxWidth: 180, fontSize: 12.5 },
-  // Blue/Primary color indicates it is a clickable link
-  link: { color: colors.primary, fontWeight: "700" },
-  // Darker/Text color indicates it is the current static location
-  last: { color: colors.text, fontWeight: "700" },
-  sep: { marginHorizontal: 6, color: colors.muted, fontSize: 16, marginTop: -1 },
-});

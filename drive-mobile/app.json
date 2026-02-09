@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "drive-mobile",
-    "slug": "drive-mobile",
+    "name": "Benni squad drive",
+    "slug": "benni-squad-drive",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.drivemobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,14 +20,24 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.drivemobile"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow access to your photos to choose a profile picture.",
+          "cameraPermission": "Allow access to your camera to take a profile picture."
+        }
+      ],
       [
         "expo-splash-screen",
         {

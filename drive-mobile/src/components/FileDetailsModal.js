@@ -1,6 +1,6 @@
 // src/components/FileDetailsModal.js
-import { Modal, View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
-import { colors } from "../ui/tokens";
+import { Modal, View, Text, Pressable, ScrollView, StyleSheet, Image } from "react-native";
+import { useTheme } from "../ui/theme";
 
 export default function FileDetailsModal({
   open,          // Boolean: Controls if the modal is visible
@@ -11,9 +11,95 @@ export default function FileDetailsModal({
   onStarToggle,  // Function: To star/unstar the item
   onDelete,      // Function: To trigger the delete API call
 }) {
+  const { colors } = useTheme();
   // Logic helpers for conditional rendering
   const isFile = file?.type === "file";
   const starred = !!file?.isStarred; // Standard "double-bang" to ensure a boolean
+  const isImageContent = typeof content === "string" && content.startsWith("data:image/");
+
+  const styles = StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+
+    header: {
+      height: 64,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+    iconText: { fontSize: 20, color: colors.text },
+    starOn: { color: colors.star },
+    starOff: { color: colors.border },
+
+    title: { fontSize: 16, fontWeight: "800", color: colors.text },
+    subtitle: { marginTop: 2, fontSize: 12.5, color: colors.muted },
+
+    body: { flex: 1, padding: 12 },
+
+    card: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      overflow: "hidden",
+    },
+    cardSep: { height: 1, backgroundColor: colors.border, opacity: 0.9 },
+    infoRow: {
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    infoLabel: { color: colors.muted, fontSize: 12.5, fontWeight: "700" },
+    infoValue: { color: colors.text, fontSize: 12.5, fontWeight: "700", maxWidth: 220 },
+
+    actionsRow: { flexDirection: "row" },
+    primaryBtn: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      borderRadius: 16,
+      alignItems: "center",
+      marginRight: 10,
+    },
+    primaryBtnText: { color: "#fff", fontWeight: "800" },
+    dangerBtn: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 12,
+      borderRadius: 16,
+      alignItems: "center",
+    },
+    dangerBtnText: { color: colors.danger, fontWeight: "800" },
+
+    sectionTitle: { color: colors.text, fontWeight: "800" },
+
+    contentBox: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      overflow: "hidden",
+    },
+    contentText: { color: colors.text, lineHeight: 20 },
+    imagePreview: { width: "100%", height: 260, resizeMode: "contain" },
+
+    errorBox: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      padding: 12,
+    },
+    errorText: { color: colors.danger, fontWeight: "700" },
+  });
 
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose}>
@@ -63,9 +149,11 @@ export default function FileDetailsModal({
               <Text style={styles.primaryBtnText}>{starred ? "Unstar" : "Star"}</Text>
             </Pressable>
 
-            <Pressable onPress={onDelete} style={styles.dangerBtn}>
-              <Text style={styles.dangerBtnText}>Delete</Text>
-            </Pressable>
+            {onDelete ? (
+              <Pressable onPress={onDelete} style={styles.dangerBtn}>
+                <Text style={styles.dangerBtnText}>Delete</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           {/* 3. CONTENT SECTION: Only rendered if the item is a file */}
@@ -79,6 +167,10 @@ export default function FileDetailsModal({
               {contentError ? (
                 <View style={styles.errorBox}>
                   <Text style={styles.errorText}>{contentError}</Text>
+                </View>
+              ) : isImageContent ? (
+                <View style={styles.contentBox}>
+                  <Image source={{ uri: content }} style={styles.imagePreview} />
                 </View>
               ) : (
                 <View style={styles.contentBox}>
@@ -111,86 +203,3 @@ function InfoRow({ label, value }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-
-  header: {
-    height: 64,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  iconText: { fontSize: 20, color: colors.text },
-  starOn: { color: colors.star },
-  starOff: { color: colors.border },
-
-  title: { fontSize: 16, fontWeight: "800", color: colors.text },
-  subtitle: { marginTop: 2, fontSize: 12.5, color: colors.muted },
-
-  body: { flex: 1, padding: 12 },
-
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    overflow: "hidden",
-  },
-  cardSep: { height: 1, backgroundColor: colors.border, opacity: 0.9 },
-  infoRow: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  infoLabel: { color: colors.muted, fontSize: 12.5, fontWeight: "700" },
-  infoValue: { color: colors.text, fontSize: 12.5, fontWeight: "700", maxWidth: 220 },
-
-  actionsRow: { flexDirection: "row" },
-  primaryBtn: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 16,
-    alignItems: "center",
-    marginRight: 10,
-  },
-  primaryBtnText: { color: "#fff", fontWeight: "800" },
-  dangerBtn: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 12,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  dangerBtnText: { color: colors.danger, fontWeight: "800" },
-
-  sectionTitle: { color: colors.text, fontWeight: "800" },
-
-  contentBox: {
-    flex: 1, // Takes up remaining vertical space in the modal
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    overflow: "hidden",
-  },
-  contentText: { color: colors.text, lineHeight: 20 },
-
-  errorBox: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    padding: 12,
-  },
-  errorText: { color: colors.danger, fontWeight: "700" },
-});

@@ -3,8 +3,10 @@ import { Text, Button, View, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { loginUser, setToken } from "../api/api"; // adjust path if needed
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../ui/theme";
 
 export default function Login({ goHome, onLoggedIn }) {
+  const { colors } = useTheme();
   const { setUser } = useAuth();
   // We use local state to 'control' the inputs. 
   // This means the screen knows exactly what is typed at every moment.
@@ -51,8 +53,8 @@ export default function Login({ goHome, onLoggedIn }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: "center", padding: 20 }}>
-      <Text style={{ fontSize: 24, marginBottom: 16 }}>Login</Text>
+    <SafeAreaView style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: colors.bg }}>
+      <Text style={{ fontSize: 24, marginBottom: 16, color: colors.text }}>Login</Text>
 
       {/* Input for the username. autoCapitalize is off because usernames are usually lowercase. */}
       <TextInput
@@ -60,7 +62,16 @@ export default function Login({ goHome, onLoggedIn }) {
         onChangeText={setUsername}
         placeholder="username"
         autoCapitalize="none"
-        style={{ borderWidth: 1, padding: 10, borderRadius: 8, marginBottom: 12 }}
+        placeholderTextColor={colors.muted}
+        style={{
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          color: colors.text,
+          padding: 10,
+          borderRadius: 8,
+          marginBottom: 12,
+        }}
       />
 
       {/* Input for the password. secureTextEntry masks the text for privacy. */}
@@ -69,11 +80,20 @@ export default function Login({ goHome, onLoggedIn }) {
         onChangeText={setPassword}
         placeholder="password"
         secureTextEntry
-        style={{ borderWidth: 1, padding: 10, borderRadius: 8, marginBottom: 12 }}
+        placeholderTextColor={colors.muted}
+        style={{
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          color: colors.text,
+          padding: 10,
+          borderRadius: 8,
+          marginBottom: 12,
+        }}
       />
 
       {/* If 'err' has a value, we render a red error message. Otherwise, we render nothing. */}
-      {err ? <Text style={{ color: "red", marginBottom: 12 }}>{err}</Text> : null}
+      {err ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{err}</Text> : null}
 
       {/* We disable the button when loading=true to prevent the user from clicking 10 times. */}
       <Button

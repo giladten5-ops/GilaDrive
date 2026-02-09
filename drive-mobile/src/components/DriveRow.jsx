@@ -1,8 +1,41 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { colors, spacing } from "../ui/tokens";
+import { spacing } from "../ui/tokens";
+import { useTheme } from "../ui/theme";
 
 export default function DriveRow({ item, onPress, onMenuPress }) {
+  const { colors } = useTheme();
   const isFolder = item.type === "folder";
+
+  const styles = StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: spacing.md,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    iconWrap: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: spacing.md,
+    },
+    icon: { fontSize: 18 },
+    name: { fontSize: 14, fontWeight: "600", color: colors.text },
+    meta: { marginTop: 2, fontSize: 12, color: colors.muted },
+    menuBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+    menuIcon: { 
+      fontSize: 22, 
+      color: colors.muted,
+      fontWeight: 'bold'
+    },
+  });
 
   return (
     <Pressable onPress={() => onPress(item)} style={styles.row}>
@@ -31,34 +64,3 @@ export default function DriveRow({ item, onPress, onMenuPress }) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  icon: { fontSize: 18 },
-  name: { fontSize: 14, fontWeight: "600", color: colors.text },
-  meta: { marginTop: 2, fontSize: 12, color: colors.muted },
-  menuBtn: { paddingHorizontal: 8, paddingVertical: 4 },
-  menuIcon: { 
-    fontSize: 22, 
-    color: colors.muted,
-    fontWeight: 'bold'
-  },
-});
