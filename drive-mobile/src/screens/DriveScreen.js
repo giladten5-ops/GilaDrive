@@ -215,7 +215,14 @@ export default function DriveScreen() {
     try {
       if (nextStarred) await starFile(file.id);
       else await unstarFile(file.id);
-    } catch (e) { refresh(); }
+      refresh();
+    } catch (e) {
+      setItems(prev => prev.map(f => f.id === file.id ? { ...f, isStarred: !nextStarred } : f));
+      Alert.alert(
+        "Error",
+        `Could not ${nextStarred ? 'star' : 'unstar'} the file. Please try again.`
+      );
+    }
   };
 
   async function handleMenuAction(actionId, file) {
@@ -578,7 +585,7 @@ export default function DriveScreen() {
       {loading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
-          <FlatList
+        <FlatList
           data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: Math.max(140, insets.bottom + 80) }}
