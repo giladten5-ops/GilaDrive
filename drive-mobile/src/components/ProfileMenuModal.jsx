@@ -2,7 +2,7 @@ import { Modal, View, Text, Pressable, StyleSheet, Image, TouchableWithoutFeedba
 import { spacing, radius } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
 
-export default function ProfileMenuModal({ visible, user, onClose, onViewPhoto, onChangePhoto, onLogout }) {
+export default function ProfileMenuModal({ visible, user, onClose, onViewPhoto, onChangePhoto, onRemovePhoto, onLogout }) {
   const { colors } = useTheme();
   if (!visible) return null;
 
@@ -83,6 +83,9 @@ export default function ProfileMenuModal({ visible, user, onClose, onViewPhoto, 
               </Pressable>
               <Pressable style={styles.item} onPress={onChangePhoto}>
                 <Text style={styles.itemText}>Change profile picture</Text>
+              </Pressable>
+              <Pressable style={[styles.item, { borderColor: colors.danger }]} onPress={onRemovePhoto}>
+                <Text style={[styles.itemText, { color: colors.danger }]}>Remove profile picture</Text>
               </Pressable>
               <Pressable style={[styles.item, styles.logout]} onPress={onLogout}>
                 <Text style={styles.logoutText}>Log out</Text>

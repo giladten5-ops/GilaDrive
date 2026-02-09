@@ -1,15 +1,16 @@
-// src/components/NewFab.js
+// src/components/NewFab.jsx
 import { Pressable, Text, StyleSheet } from "react-native";
 import { spacing } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
 
-export default function NewFab({ onPress }) {
+export default function NewFab({ onOpen }) {
   const { colors } = useTheme();
+
   const styles = StyleSheet.create({
     fab: {
       position: "absolute",
       right: spacing.lg,
-      bottom: 90, 
+      bottom: 90,
       width: 56,
       height: 56,
       borderRadius: 18,
@@ -24,15 +25,15 @@ export default function NewFab({ onPress }) {
       shadowOffset: { width: 0, height: 6 },
       elevation: 4,
     },
-    plus: { 
-      fontSize: 28, 
-      color: colors.text, 
-      marginTop: -2 
+    plus: {
+      fontSize: 28,
+      color: colors.text,
+      marginTop: -2
     },
   });
+
   return (
-    // Pressable is used instead of Button to allow for custom circular styling
-    <Pressable onPress={onPress} style={styles.fab}>
+    <Pressable onPress={onOpen} style={styles.fab}>
       <Text style={styles.plus}>＋</Text>
     </Pressable>
   );

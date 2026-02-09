@@ -1,110 +1,110 @@
-import { useEffect, useState } from "react";
+// src/components/CreateItemModal.jsx
 import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
-import { spacing, radius } from "../ui/tokens";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FolderPlus, FileText, Upload, Camera, X } from "lucide-react-native";
 import { useTheme } from "../ui/theme";
-import PromptModal from "./PromptModal";
 
-export default function CreateItemModal({ visible, onClose, onCreate, onUploadFromDevice, onAfterClose }) {
+export default function CreateItemModal({ visible, onClose, onSelectAction }) {
   const { colors } = useTheme();
-  const [step, setStep] = useState(null); // null | 'folder' | 'file'
-  const [name, setName] = useState("");
-  const [content, setContent] = useState("");
-
-  useEffect(() => {
-    if (visible) {
-      setStep(null);
-      setName("");
-      setContent("");
-    }
-  }, [visible]);
-
-  if (!visible) return null;
+  const insets = useSafeAreaInsets();
 
   const styles = StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.35)",
-      justifyContent: "center",
-      padding: spacing.lg,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "flex-end",
     },
     sheet: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: colors.searchPill,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingTop: 12,
+      paddingBottom: insets.bottom,
+      width: "100%",
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
-    title: { fontSize: 16, fontWeight: "900", color: colors.text, marginBottom: spacing.md },
-    rowBtn: {
+    dragHandle: {
+      width: 36,
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      alignSelf: "center",
+      marginBottom: 20,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 24,
+      marginBottom: 10,
+    },
+    title: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.muted,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    list: {
+      paddingHorizontal: 8,
+    },
+    item: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 14,
-      paddingHorizontal: spacing.md,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.bg,
-      marginBottom: spacing.sm,
+      paddingVertical: 18,
+      paddingHorizontal: 24,
     },
-    rowText: { color: colors.text, fontWeight: "800" },
-    cancelBtn: {
-      paddingVertical: 12,
-      borderRadius: radius.md,
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
+    iconWrap: {
+      marginRight: 20,
     },
-    cancelText: { color: colors.muted, fontWeight: "800" },
+    itemLabel: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: "500"
+    },
   });
 
-  if (step === "folder" || step === "file") {
-    return (
-      <PromptModal
-        visible={visible}
-        title={step === "folder" ? "New folder" : "New file"}
-        label={step === "folder" ? "Folder name" : "File name"}
-        value={name}
-        onChangeValue={setName}
-        placeholder={step === "folder" ? "e.g. Homework" : "e.g. notes.txt"}
-        confirmText="Create"
-        cancelText="Cancel"
-        onCancel={onClose}
-        onConfirm={() => {
-          const trimmed = name.trim();
-          if (!trimmed) return;
-          onCreate?.({ type: step, name: trimmed, content: step === "file" ? content : undefined });
-        }}
-      />
-    );
-  }
+  const actions = [
+    { id: "folder", label: "Folder", Icon: FolderPlus },
+    { id: "file", label: "New File", Icon: FileText },
+    { id: "upload", label: "Upload", Icon: Upload },
+    { id: "camera", label: "Scan / Camera", Icon: Camera },
+  ];
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      onDismiss={onAfterClose}
-    >
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          <Text style={styles.title}>Create</Text>
+    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={styles.dragHandle} />
 
-          <Pressable style={styles.rowBtn} onPress={() => setStep("folder")}>
-            <Text style={styles.rowText}>Folder</Text>
-          </Pressable>
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Something New</Text>
+            <Pressable onPress={onClose}><X color={colors.muted} size={20} /></Pressable>
+          </View>
 
-          <Pressable style={styles.rowBtn} onPress={() => setStep("file")}>
-            <Text style={styles.rowText}>File</Text>
-          </Pressable>
-
-          <View style={{ height: spacing.md }} />
-          <Pressable style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-        </View>
-      </View>
+          <View style={styles.list}>
+            {actions.map((act) => (
+              <Pressable
+                key={act.id}
+                style={({ pressed }) => [
+                  styles.item,
+                  { backgroundColor: pressed ? "rgba(255,255,255,0.05)" : "transparent" }
+                ]}
+                onPress={() => {
+                  onClose();
+                  onSelectAction(act.id);
+                }}
+              >
+                <View style={styles.iconWrap}>
+                  <act.Icon color={colors.text} size={24} />
+                </View>
+                <Text style={styles.itemLabel}>{act.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
