@@ -41,6 +41,9 @@ export default function PromptModal({
       padding: spacing.lg,
       borderWidth: 1,
       borderColor: colors.border,
+      maxWidth: 360,
+      alignSelf: "center",
+      width: "100%",
     },
     title: { fontSize: 16, fontWeight: "800", color: colors.text },
     label: { marginTop: spacing.sm, color: colors.muted, fontWeight: "600" },
@@ -55,7 +58,7 @@ export default function PromptModal({
       color: colors.text,
     },
     inputMultiline: { height: 120, textAlignVertical: "top" },
-    row: { flexDirection: "row", marginTop: spacing.lg, gap: spacing.sm },
+    row: { flexDirection: "row", marginTop: spacing.lg, marginBottom: spacing.lg, gap: spacing.sm },
     btn: {
       flex: 1,
       borderWidth: 1,

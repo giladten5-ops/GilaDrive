@@ -317,8 +317,11 @@ export default function DriveScreen() {
       };
       if (normalizedParentId) payload.parentId = normalizedParentId;
       await uploadFile(payload);
-      refresh();
       Alert.alert("Uploaded", picked.name);
+      // Give server time to persist file before fetching
+      setTimeout(() => {
+        refresh();
+      }, 300);
     } catch (e) {
       const message = String(e?.message || "");
       if (message.includes("picking in progress")) {
@@ -365,8 +368,11 @@ export default function DriveScreen() {
       if (normalizedParentId) payload.parentId = normalizedParentId;
 
       await uploadFile(payload);
-      refresh();
       Alert.alert("Uploaded", picked.name || "Image");
+      // Give server time to persist file before fetching
+      setTimeout(() => {
+        refresh();
+      }, 300);
     } catch (e) {
       const message = String(e?.message || "");
       Alert.alert("Upload failed", message || "Upload failed.");
@@ -662,8 +668,7 @@ export default function DriveScreen() {
 
       <PromptModal
         visible={renameOpen}
-        title="Rename"
-        label="New name"
+        title={renameFile?.isNew ? "Give it a new name:" : "Rename:"}
         value={renameValue}
         onChangeValue={setRenameValue}
         placeholder="Enter name"

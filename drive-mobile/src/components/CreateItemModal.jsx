@@ -69,7 +69,7 @@ export default function CreateItemModal({ visible, onClose, onSelectAction }) {
     { id: "folder", label: "Folder", Icon: FolderPlus },
     { id: "file", label: "New File", Icon: FileText },
     { id: "upload", label: "Upload", Icon: Upload },
-    { id: "camera", label: "Scan / Camera", Icon: Camera },
+    { id: "camera", label: "Camera / Gallery", Icon: Camera },
   ];
 
   return (
