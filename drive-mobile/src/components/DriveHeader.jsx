@@ -24,7 +24,6 @@ export default function DriveHeader({
       alignItems: "center",
       paddingHorizontal: spacing.md,
       backgroundColor: colors.bg,
-      gap: 10,
     },
     iconBtn: {
       width: 40,
@@ -36,33 +35,45 @@ export default function DriveHeader({
     icon: { fontSize: 18, color: colors.text },
     searchPill: {
       flex: 1,
-      height: 46,
+      height: 52,
       borderRadius: radius.pill,
       backgroundColor: colors.searchPill,
       flexDirection: "row",
       alignItems: "center",
+      paddingLeft: 8,
+      paddingRight: 12,
       paddingHorizontal: spacing.lg,
       borderWidth: 1,
       borderColor: colors.border,
+      gap: 4,
     },
-    searchIcon: { color: colors.muted, fontSize: 16, marginRight: 10 },
-    searchInput: { 
-      flex: 1, 
-      color: colors.text, 
-      fontSize: 14, 
-      paddingVertical: 0 
+    //searchIcon: { color: colors.muted, fontSize: 16, marginRight: 10 },
+    searchInput: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 16,
+      paddingVertical: 0,
+      marginLeft: 4,
     },
     themeBtn: {
       height: 34,
-      paddingHorizontal: 10,
+      width: 34,
+      paddingHorizontal: 0,
       borderRadius: 10,
-      borderWidth: 1,
+      borderWidth: 0,
       borderColor: colors.border,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.surface,
+      backgroundColor: "transparent",
     },
-    themeIcon: { color: colors.text, fontSize: 16, fontWeight: "700" },
+    
+    themeIcon: {
+      color: colors.text,
+      fontSize: 20,
+      lineHeight: 20,
+      fontWeight: "700"
+    },
+
     avatar: {
       width: 38,
       height: 38,
@@ -80,45 +91,43 @@ export default function DriveHeader({
 
   return (
     <View style={styles.wrap}>
-      {/* Menu Button (Hamburger) */}
-      <Pressable onPress={onOpenMenu} hitSlop={10} style={styles.iconBtn}>
-        <Text style={styles.icon}>≡</Text>
-      </Pressable>
 
-      {/* The Search Bar "Pill" container */}
+      {/* EVERYTHING is now inside the searchPill */}
       <View style={styles.searchPill}>
-        <Text style={styles.searchIcon}>⌕</Text>
+
+        <Pressable onPress={onOpenMenu} hitSlop={10} style={styles.iconBtn}>
+          <Text style={styles.icon}>≡</Text>
+        </Pressable>
+
         <TextInput
           value={searchValue}
           onChangeText={onChangeSearch}
           placeholder="Search in Drive"
           placeholderTextColor={colors.muted}
           style={styles.searchInput}
-          // 'returnKeyType="search"' changes the keyboard button to say "Search"
           returnKeyType="search"
-          // 'onSubmitEditing' triggers when the user presses the search button on keyboard
           onSubmitEditing={onSubmitSearch}
           autoCapitalize="none"
         />
+
+        <Pressable
+          onPress={toggleTheme}
+          hitSlop={10}
+          style={styles.themeBtn}
+          accessibilityLabel="Toggle theme"
+        >
+          <Text style={styles.themeIcon}>{themeIcon}</Text>
+        </Pressable>
+
+        <Pressable onPress={onAvatarPress} hitSlop={10} style={styles.avatar}>
+          {resolvedAvatarUri ? (
+            <Image source={{ uri: resolvedAvatarUri }} style={styles.avatarImg} />
+          ) : (
+            <Text style={styles.avatarText}>{avatarLabel}</Text>
+          )}
+        </Pressable>
+
       </View>
-
-      <Pressable
-        onPress={toggleTheme}
-        hitSlop={10}
-        style={styles.themeBtn}
-        accessibilityLabel="Toggle theme"
-      >
-        <Text style={styles.themeIcon}>{themeIcon}</Text>
-      </Pressable>
-
-      {/* Profile/Avatar Button */}
-      <Pressable onPress={onAvatarPress} hitSlop={10} style={styles.avatar}>
-        {resolvedAvatarUri ? (
-          <Image source={{ uri: resolvedAvatarUri }} style={styles.avatarImg} />
-        ) : (
-          <Text style={styles.avatarText}>{avatarLabel}</Text>
-        )}
-      </Pressable>
     </View>
   );
 }
