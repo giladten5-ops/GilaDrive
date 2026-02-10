@@ -1,20 +1,19 @@
-// src/components/FileDetailsModal.js
+// src/components/FileDetailsModal.jsx
 import { Modal, View, Text, Pressable, ScrollView, StyleSheet, Image } from "react-native";
 import { useTheme } from "../ui/theme";
 
 export default function FileDetailsModal({
-  open,          // Boolean: Controls if the modal is visible
-  file,          // Object: The file/folder metadata
-  content,       // String: The raw text content of the file
-  contentError,  // String: Any error message if content fails to load
-  onClose,       // Function: To dismiss the modal
-  onStarToggle,  // Function: To star/unstar the item
-  onDelete,      // Function: To trigger the delete API call
+  open,
+  file,
+  content,
+  contentError,
+  onClose,
+  onStarToggle,
+  onDelete,
 }) {
   const { colors } = useTheme();
-  // Logic helpers for conditional rendering
   const isFile = file?.type === "file";
-  const starred = !!file?.isStarred; // Standard "double-bang" to ensure a boolean
+  const starred = !!file?.isStarred;
   const isImageContent = typeof content === "string" && content.startsWith("data:image/");
 
   const styles = StyleSheet.create({
@@ -104,15 +103,11 @@ export default function FileDetailsModal({
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
-        
-        {/* 1. HEADER SECTION */}
         <View style={styles.header}>
-          {/* Back/Close Button */}
           <Pressable onPress={onClose} hitSlop={10} style={styles.iconBtn}>
             <Text style={styles.iconText}>←</Text>
           </Pressable>
 
-          {/* Title Area: Shows Name and Type/Star status */}
           <View style={{ flex: 1 }}>
             <Text style={styles.title} numberOfLines={1}>
               {file?.name ?? "File"}
@@ -123,7 +118,6 @@ export default function FileDetailsModal({
             </Text>
           </View>
 
-          {/* Quick Toggle Star in Header */}
           <Pressable onPress={onStarToggle} hitSlop={10} style={styles.iconBtn}>
             <Text style={[styles.iconText, starred ? styles.starOn : styles.starOff]}>
               {starred ? "★" : "☆"}
@@ -131,19 +125,15 @@ export default function FileDetailsModal({
           </Pressable>
         </View>
 
-        {/* 2. BODY SECTION */}
         <View style={styles.body}>
-          
-          {/* Metadata Card: Displays key-value pairs using InfoRow helper */}
           <View style={styles.card}>
-            <InfoRow label="Type" value={file?.type ?? "—"} />
+            <InfoRow styles={styles} label="Type" value={file?.type ?? "—"} />
             <View style={styles.cardSep} />
-            <InfoRow label="Starred" value={starred ? "Yes" : "No"} />
+            <InfoRow styles={styles} label="Starred" value={starred ? "Yes" : "No"} />
           </View>
 
           <View style={{ height: 12 }} />
 
-          {/* Action Buttons: Star/Unstar and Delete */}
           <View style={styles.actionsRow}>
             <Pressable onPress={onStarToggle} style={styles.primaryBtn}>
               <Text style={styles.primaryBtnText}>{starred ? "Unstar" : "Star"}</Text>
@@ -156,14 +146,12 @@ export default function FileDetailsModal({
             ) : null}
           </View>
 
-          {/* 3. CONTENT SECTION: Only rendered if the item is a file */}
           {isFile ? (
             <>
               <View style={{ height: 16 }} />
               <Text style={styles.sectionTitle}>Content</Text>
               <View style={{ height: 8 }} />
 
-              {/* Show error box if fetching failed, otherwise show the scrollable text */}
               {contentError ? (
                 <View style={styles.errorBox}>
                   <Text style={styles.errorText}>{contentError}</Text>
@@ -174,7 +162,6 @@ export default function FileDetailsModal({
                 </View>
               ) : (
                 <View style={styles.contentBox}>
-                  {/* ScrollView allows the user to read long files within the modal */}
                   <ScrollView contentContainerStyle={{ padding: 12 }}>
                     <Text selectable style={styles.contentText}>
                       {content ?? ""}
@@ -190,10 +177,7 @@ export default function FileDetailsModal({
   );
 }
 
-/**
- * A small internal helper component to keep the metadata list clean.
- */
-function InfoRow({ label, value }) {
+function InfoRow({ styles, label, value }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>

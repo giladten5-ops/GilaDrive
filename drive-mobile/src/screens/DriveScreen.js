@@ -1,16 +1,16 @@
 // src/screens/DriveScreen.js
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  ActivityIndicator, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
   Alert,
   InteractionManager,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   listFiles,
   getFile,
@@ -27,6 +27,7 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../ui/theme";
 import { pickDocument, pickImage } from "../utils/media";
+import NewFab from "../components/NewFab";
 
 // Components
 import DriveHeader from "../components/DriveHeader";
@@ -52,15 +53,15 @@ export default function DriveScreen() {
   const { logout, user, setUser } = useAuth();
 
   // --- State ---
-  const [activeView, setActiveView] = useState("home"); 
-  const [parentId, setParentId] = useState(null); 
+  const [activeView, setActiveView] = useState("home");
+  const [parentId, setParentId] = useState(null);
   const [crumbs, setCrumbs] = useState([{ id: null, name: "My Drive" }]);
-  const [viewMode, setViewMode] = useState("grid"); 
+  const [viewMode, setViewMode] = useState("grid");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const [q, setQ] = useState(""); 
-  const [searchMode, setSearchMode] = useState(false); 
+  const [q, setQ] = useState("");
+  const [searchMode, setSearchMode] = useState(false);
 
   const [sideOpen, setSideOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -71,13 +72,14 @@ export default function DriveScreen() {
   const [detailsContent, setDetailsContent] = useState("");
   const [detailsError, setDetailsError] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editContent, setEditContent] = useState(""); 
+  const [editContent, setEditContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const requestId = useRef(0);
   const detailsRequestId = useRef(0);
   const pickDocInFlight = useRef(false);
   const pickDocTimeout = useRef(null);
   const pendingDocPick = useRef(false);
+  const pickImageInFlight = useRef(false);
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
@@ -95,10 +97,11 @@ export default function DriveScreen() {
     return label ? label[0].toUpperCase() : "U";
   }, [user]);
   const avatarUri = typeof user?.image === "string" && user.image.trim() ? user.image : null;
+  const insets = useSafeAreaInsets();
 
   // --- Filters ---
   const filters = useMemo(() => {
-    if (activeView === "home") return parentId ? { parentId } : {}; 
+    if (activeView === "home") return parentId ? { parentId } : {};
     if (activeView === "starred" && parentId) return { parentId };
     return { view: activeView, parentId: parentId ?? "" };
   }, [activeView, parentId]);
@@ -121,17 +124,17 @@ export default function DriveScreen() {
     try {
       const data = await listFiles(filters);
       setItems(Array.isArray(data) ? data : []);
-    } catch (e) { 
-      setErr(e.message); 
-    } finally { 
-      setLoading(false); 
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
     }
   }
 
-  useEffect(() => { 
+  useEffect(() => {
     setSearchMode(false);
     setQ("");
-    refresh(); 
+    refresh();
   }, [activeView, parentId]);
 
   useEffect(() => {
@@ -212,7 +215,14 @@ export default function DriveScreen() {
     try {
       if (nextStarred) await starFile(file.id);
       else await unstarFile(file.id);
-    } catch (e) { refresh(); }
+      refresh();
+    } catch (e) {
+      setItems(prev => prev.map(f => f.id === file.id ? { ...f, isStarred: !nextStarred } : f));
+      Alert.alert(
+        "Error",
+        `Could not ${nextStarred ? 'star' : 'unstar'} the file. Please try again.`
+      );
+    }
   };
 
   async function handleMenuAction(actionId, file) {
@@ -279,29 +289,6 @@ export default function DriveScreen() {
     finally { setIsSaving(false); }
   };
 
-  async function handleCreate({ type, name, content }) {
-    if (activeView !== "home") {
-      Alert.alert("Not available", "Create is only available in My Drive.");
-      return;
-    }
-    const normalizedParentId =
-      parentId == null || parentId === "" || parentId === "null" || parentId === "undefined"
-        ? null
-        : parentId;
-    try {
-      setCreateOpen(false);
-      const payload = {
-        name,
-        type,
-        content,
-      };
-      if (normalizedParentId) payload.parentId = normalizedParentId;
-      await uploadFile(payload);
-      refresh();
-    } catch (e) {
-      Alert.alert("Error", e.message || "Create failed.");
-    }
-  }
 
   function resetPickDocLock() {
     pickDocInFlight.current = false;
@@ -337,8 +324,11 @@ export default function DriveScreen() {
       };
       if (normalizedParentId) payload.parentId = normalizedParentId;
       await uploadFile(payload);
-      refresh();
       Alert.alert("Uploaded", picked.name);
+      // Give server time to persist file before fetching
+      setTimeout(() => {
+        refresh();
+      }, 300);
     } catch (e) {
       const message = String(e?.message || "");
       if (message.includes("picking in progress")) {
@@ -352,10 +342,6 @@ export default function DriveScreen() {
   }
 
   function handleUploadFromDevice() {
-    if (activeView !== "home") {
-      Alert.alert("Not available", "Upload is only available in My Drive.");
-      return;
-    }
     pendingDocPick.current = true;
     setCreateOpen(false);
     setTimeout(() => {
@@ -363,6 +349,57 @@ export default function DriveScreen() {
       pendingDocPick.current = false;
       launchDocumentPicker();
     }, 500);
+  }
+
+  async function pickImageAndUpload(fromCamera = false) {
+    if (pickImageInFlight.current) {
+      Alert.alert("Please wait", "Image picker is already open.");
+      return;
+    }
+    pickImageInFlight.current = true;
+    try {
+      await new Promise((resolve) => InteractionManager.runAfterInteractions(resolve));
+      const picked = await pickImage({ fromCamera });
+      if (!picked) return;
+
+      const normalizedParentId =
+        parentId == null || parentId === "" || parentId === "null" || parentId === "undefined"
+          ? null
+          : parentId;
+
+      const payload = {
+        name: picked.name || (fromCamera ? "photo.jpg" : "image.jpg"),
+        type: "file",
+        content: picked.dataUrl,
+      };
+      if (normalizedParentId) payload.parentId = normalizedParentId;
+
+      await uploadFile(payload);
+      Alert.alert("Uploaded", picked.name || "Image");
+      // Give server time to persist file before fetching
+      setTimeout(() => {
+        refresh();
+      }, 300);
+    } catch (e) {
+      const message = String(e?.message || "");
+      Alert.alert("Upload failed", message || "Upload failed.");
+    } finally {
+      pickImageInFlight.current = false;
+    }
+  }
+
+  function startImageUploadFlow() {
+    pendingDocPick.current = true;
+    setCreateOpen(false);
+    setTimeout(() => {
+      if (!pendingDocPick.current) return;
+      pendingDocPick.current = false;
+      Alert.alert("Add image", "Select source", [
+        { text: "Camera", onPress: () => pickImageAndUpload(true) },
+        { text: "Gallery", onPress: () => pickImageAndUpload(false) },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }, 300);
   }
 
   function handleCreateModalDismiss() {
@@ -400,18 +437,6 @@ export default function DriveScreen() {
     }
   }
 
-  async function handleRenameConfirm() {
-    const file = renameFile;
-    const next = renameValue.trim();
-    if (!file || !next) return;
-    try {
-      setRenameOpen(false);
-      await updateFile(file.id, { name: next });
-      refresh();
-    } catch (e) {
-      Alert.alert("Error", e.message || "Rename failed.");
-    }
-  }
 
   async function handleShare({ username, permissionType }) {
     if (!shareFile) return;
@@ -467,6 +492,60 @@ export default function DriveScreen() {
     empty: { padding: 40, alignItems: "center" }
   });
 
+  const handleFabAction = (action) => {
+    switch (action) {
+      case 'folder':
+        setRenameFile({ isNew: true, type: 'folder' });
+        setRenameValue("");
+        setRenameOpen(true);
+        break;
+      case 'file':
+        setRenameFile({ isNew: true, type: 'file' });
+        setRenameValue("");
+        setRenameOpen(true);
+        break;
+      case 'upload':
+        handleUploadFromDevice();
+        break;
+      case 'camera':
+        startImageUploadFlow();
+        break;
+    }
+  };
+
+  async function handleRenameConfirm() {
+    const file = renameFile;
+    const name = renameValue.trim();
+    if (!file || !name) return;
+
+    try {
+      setRenameOpen(false);
+
+      if (file?.isNew) {
+        const normalizedParentId =
+          parentId == null || parentId === "" || parentId === "null" || parentId === "undefined"
+            ? null
+            : parentId;
+
+        const payload = {
+          name,
+          type: file.type,
+          parentId: normalizedParentId
+        };
+        
+        await uploadFile(payload);
+        refresh();
+
+      } else {
+        await updateFile(file.id, { name });
+        refresh();
+      }
+    } catch (e) {
+      Alert.alert("Error", e.message || "Operation failed.");
+    }
+  }
+
+
   return (
     <SafeAreaView style={styles.root}>
       <SideMenuModal
@@ -477,7 +556,7 @@ export default function DriveScreen() {
         onLogout={logout}
       />
 
-      <DriveHeader 
+      <DriveHeader
         searchValue={q}
         onChangeSearch={setQ}
         onSubmitSearch={doSearch}
@@ -497,38 +576,32 @@ export default function DriveScreen() {
       )}
 
       <SectionHeader title={searchMode ? "Search Results" : "Files"} viewMode={viewMode} onToggleView={setViewMode} />
-      
+
       {loading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 140 }}
+          contentContainerStyle={{ paddingBottom: Math.max(140, insets.bottom + 80) }}
           renderItem={({ item }) => (
-            viewMode === "grid" 
+            viewMode === "grid"
               ? <FileCard item={item} onMenuPress={setMenuFile} onPress={openItem} />
               : <DriveRow item={item} onMenuPress={setMenuFile} onPress={openItem} />
           )}
           ListEmptyComponent={
-          <View style={styles.empty}>
+            <View style={styles.empty}>
               <Text style={{ color: colors.muted }}>{searchMode ? "No matches" : "No items"}</Text>
             </View>
           }
         />
       )}
 
-      <BottomTabs 
-        active={activeView === "home" ? "home" : ""} 
-        onHome={() => setView("home")} 
-        onCreate={() => {
-          if (activeView !== "home") {
-            Alert.alert("Not available", "Create is only available in My Drive.");
-            return;
-          }
-          setCreateOpen(true);
-        }}
-        onUpload={handleUploadFromDevice}
+      <NewFab onOpen={() => setCreateOpen(true)} />
+
+      <BottomTabs
+        active={activeView}
+        onTabPress={(viewName) => setView(viewName)}
       />
 
       <TextEditorModal
@@ -550,15 +623,17 @@ export default function DriveScreen() {
         onStarToggle={() => handleToggleStar(selected)}
         onDelete={handleDetailsDelete}
       />
-      
+
       <FileOptionsMenu visible={!!menuFile} file={menuFile} onClose={() => setMenuFile(null)} onAction={handleMenuAction} />
 
       <CreateItemModal
         visible={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreate={handleCreate}
-        onUploadFromDevice={handleUploadFromDevice}
-        onAfterClose={handleCreateModalDismiss}
+        onSelectAction={(action) => {
+          setTimeout(() => {
+            handleFabAction(action);
+          }, 300);
+        }}
       />
 
       <ProfileMenuModal
@@ -574,9 +649,12 @@ export default function DriveScreen() {
           Alert.alert("Change profile picture", "Select a source", [
             { text: "Camera", onPress: () => handleProfilePhotoChange(true) },
             { text: "Gallery", onPress: () => handleProfilePhotoChange(false) },
-            { text: "Remove", style: "destructive", onPress: handleProfilePhotoRemove },
             { text: "Cancel", style: "cancel" },
           ]);
+        }}
+        onRemovePhoto={() => {
+          setProfileMenuOpen(false);
+          handleProfilePhotoRemove();
         }}
         onLogout={async () => {
           setProfileMenuOpen(false);
@@ -592,8 +670,7 @@ export default function DriveScreen() {
 
       <PromptModal
         visible={renameOpen}
-        title="Rename"
-        label="New name"
+        title={renameFile?.isNew ? "Give it a new name:" : "Rename:"}
         value={renameValue}
         onChangeValue={setRenameValue}
         placeholder="Enter name"
