@@ -532,7 +532,7 @@ export default function DriveScreen() {
           type: file.type,
           parentId: normalizedParentId
         };
-        
+
         await uploadFile(payload);
         refresh();
 
@@ -566,6 +566,8 @@ export default function DriveScreen() {
         avatarInitial={avatarInitial}
       />
 
+      <SectionHeader title={searchMode ? "Search Results" : "Files"} viewMode={viewMode} onToggleView={setViewMode} />
+
       {crumbs.length > 1 && (
         <View style={styles.crumbsWrap}>
           <Breadcrumbs crumbs={crumbs} onCrumbPress={(idx) => {
@@ -574,8 +576,6 @@ export default function DriveScreen() {
           }} />
         </View>
       )}
-
-      <SectionHeader title={searchMode ? "Search Results" : "Files"} viewMode={viewMode} onToggleView={setViewMode} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
