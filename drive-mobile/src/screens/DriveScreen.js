@@ -532,14 +532,9 @@ export default function DriveScreen() {
           type: file.type,
           parentId: normalizedParentId
         };
-
-        const newFile = await uploadFile(payload);
+        
+        await uploadFile(payload);
         refresh();
-
-        setTimeout(() => {
-          setMoveFile(newFile);
-          setMoveOpen(true);
-        }, 500);
 
       } else {
         await updateFile(file.id, { name });
