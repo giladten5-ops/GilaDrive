@@ -24,6 +24,7 @@ export default function RootNavigator() {
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerTitleStyle: { color: colors.text },
+        headerShown: false,
       }}
     >
       {/* CONDITIONAL NAVIGATION BLOCK:
