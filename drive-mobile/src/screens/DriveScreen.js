@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   InteractionManager,
+  AsyncStorage,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -56,7 +57,7 @@ export default function DriveScreen() {
   const [activeView, setActiveView] = useState("home");
   const [parentId, setParentId] = useState(null);
   const [crumbs, setCrumbs] = useState([{ id: null, name: "My Drive" }]);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -137,9 +138,30 @@ export default function DriveScreen() {
     refresh();
   }, [activeView, parentId]);
 
+  // Load viewMode from AsyncStorage on mount
   useEffect(() => {
-    setViewMode("grid");
-  }, [activeView]);
+    const loadViewMode = async () => {
+      try {
+        const saved = await AsyncStorage.getItem("viewMode");
+        if (saved) setViewMode(saved);
+      } catch (e) {
+        console.log("Error loading viewMode:", e);
+      }
+    };
+    loadViewMode();
+  }, []);
+  
+  //save view mode to async storage when it changes
+  useEffect(() => {
+    const saveViewMode = async () => {
+      try {
+        await AsyncStorage.setItem("viewMode", viewMode);
+      } catch (e) {
+        console.log("Error saving viewMode:", e);
+      }
+    };
+    saveViewMode();
+  }, [viewMode]);
 
   function setView(nextView) {
     setActiveView(nextView);

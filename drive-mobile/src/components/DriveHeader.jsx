@@ -32,7 +32,7 @@ export default function DriveHeader({
       alignItems: "center",
       justifyContent: "center",
     },
-    icon: { fontSize: 18, color: colors.text },
+    icon: { fontSize: 18, color: colors.text, lineHeight: 19, },
     searchPill: {
       flex: 1,
       height: 52,
@@ -40,8 +40,8 @@ export default function DriveHeader({
       backgroundColor: colors.searchPill,
       flexDirection: "row",
       alignItems: "center",
-      paddingLeft: 8,
-      paddingRight: 12,
+      paddingLeft: 6,
+      paddingRight: 7,
       paddingHorizontal: spacing.lg,
       borderWidth: 1,
       borderColor: colors.border,
@@ -70,7 +70,7 @@ export default function DriveHeader({
     themeIcon: {
       color: colors.text,
       fontSize: 20,
-      lineHeight: 20,
+      lineHeight: 25,
       fontWeight: "700"
     },
 
