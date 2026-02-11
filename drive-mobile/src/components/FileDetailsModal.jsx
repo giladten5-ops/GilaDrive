@@ -1,5 +1,6 @@
 // src/components/FileDetailsModal.jsx
 import { Modal, View, Text, Pressable, ScrollView, StyleSheet, Image } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../ui/theme";
 
 export default function FileDetailsModal({
@@ -11,7 +12,8 @@ export default function FileDetailsModal({
   onStarToggle,
   onDelete,
 }) {
-  const { colors } = useTheme();
+  const { colors } = useTheme(); 
+  const insets = useSafeAreaInsets();
   const isFile = file?.type === "file";
   const starred = !!file?.isStarred;
   const isImageContent = typeof content === "string" && content.startsWith("data:image/");
@@ -27,6 +29,7 @@ export default function FileDetailsModal({
       paddingHorizontal: 12,
       flexDirection: "row",
       alignItems: "center",
+      zIndex: 10,
     },
     iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
     iconText: { fontSize: 20, color: colors.text },
@@ -36,61 +39,42 @@ export default function FileDetailsModal({
     title: { fontSize: 16, fontWeight: "800", color: colors.text },
     subtitle: { marginTop: 2, fontSize: 12.5, color: colors.muted },
 
-    body: { flex: 1, padding: 12 },
-
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 18,
-      overflow: "hidden",
-    },
-    cardSep: { height: 1, backgroundColor: colors.border, opacity: 0.9 },
-    infoRow: {
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    infoLabel: { color: colors.muted, fontSize: 12.5, fontWeight: "700" },
-    infoValue: { color: colors.text, fontSize: 12.5, fontWeight: "700", maxWidth: 220 },
-
-    actionsRow: { flexDirection: "row" },
-    primaryBtn: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      paddingVertical: 12,
-      borderRadius: 16,
-      alignItems: "center",
-      marginRight: 10,
-    },
-    primaryBtnText: { color: "#fff", fontWeight: "800" },
-    dangerBtn: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 12,
-      borderRadius: 16,
-      alignItems: "center",
-    },
-    dangerBtnText: { color: colors.danger, fontWeight: "800" },
-
-    sectionTitle: { color: colors.text, fontWeight: "800" },
-
     contentBox: {
       flex: 1,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 18,
-      overflow: "hidden",
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.bg,
     },
     contentText: { color: colors.text, lineHeight: 20 },
-    imagePreview: { width: "100%", height: 260, resizeMode: "contain" },
+    imagePreview: {
+      width: "100%",
+      height: "100%",
+      resizeMode: "contain"
+    },
+
+    // Floating Trash Button
+    deleteFab: {
+      position: "absolute",
+      right: 20,
+      bottom: 30,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
+      elevation: 4,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    deleteIcon: { fontSize: 24 },
 
     errorBox: {
+      margin: 12,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
@@ -102,56 +86,31 @@ export default function FileDetailsModal({
 
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.root}>
-        <View style={styles.header}>
-          <Pressable onPress={onClose} hitSlop={10} style={styles.iconBtn}>
-            <Text style={styles.iconText}>←</Text>
-          </Pressable>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title} numberOfLines={1}>
-              {file?.name ?? "File"}
-            </Text>
-            <Text style={styles.subtitle}>
-              {file?.type ? (file.type === "folder" ? "Folder" : "File") : "—"}
-              {starred ? " • Starred" : ""}
-            </Text>
-          </View>
-
-          <Pressable onPress={onStarToggle} hitSlop={10} style={styles.iconBtn}>
-            <Text style={[styles.iconText, starred ? styles.starOn : styles.starOff]}>
-              {starred ? "★" : "☆"}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.body}>
-          <View style={styles.card}>
-            <InfoRow styles={styles} label="Type" value={file?.type ?? "—"} />
-            <View style={styles.cardSep} />
-            <InfoRow styles={styles} label="Starred" value={starred ? "Yes" : "No"} />
-          </View>
-
-          <View style={{ height: 12 }} />
-
-          <View style={styles.actionsRow}>
-            <Pressable onPress={onStarToggle} style={styles.primaryBtn}>
-              <Text style={styles.primaryBtnText}>{starred ? "Unstar" : "Star"}</Text>
+      <SafeAreaView style={styles.root}>
+        <View style={styles.root}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Pressable onPress={onClose} hitSlop={10} style={styles.iconBtn}>
+              <Text style={styles.iconText}>←</Text>
             </Pressable>
 
-            {onDelete ? (
-              <Pressable onPress={onDelete} style={styles.dangerBtn}>
-                <Text style={styles.dangerBtnText}>Delete</Text>
-              </Pressable>
-            ) : null}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title} numberOfLines={1}>
+                {file?.name ?? "File"}
+              </Text>
+              <Text style={styles.subtitle}>{"image"} {starred ? " • Starred" : ""} </Text>
+            </View>
+
+            <Pressable onPress={onStarToggle} hitSlop={10} style={styles.iconBtn}>
+              <Text style={[styles.iconText, starred ? styles.starOn : styles.starOff]}>
+                {starred ? "★" : "☆"}
+              </Text>
+            </Pressable>
           </View>
 
+          {/* Content Area */}
           {isFile ? (
-            <>
-              <View style={{ height: 16 }} />
-              <Text style={styles.sectionTitle}>Content</Text>
-              <View style={{ height: 8 }} />
-
+            <View style={{ flex: 1 }}>
               {contentError ? (
                 <View style={styles.errorBox}>
                   <Text style={styles.errorText}>{contentError}</Text>
@@ -169,21 +128,21 @@ export default function FileDetailsModal({
                   </ScrollView>
                 </View>
               )}
-            </>
+
+              {/* Floating Trash Button */}
+              <Pressable
+                onPress={onDelete}
+                style={({ pressed }) => [
+                  styles.deleteFab,
+                  { opacity: pressed ? 0.7 : 1 }
+                ]}
+              >
+                <Text style={styles.deleteIcon}>🗑️</Text>
+              </Pressable>
+            </View>
           ) : null}
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
-  );
-}
-
-function InfoRow({ styles, label, value }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>
-        {String(value)}
-      </Text>
-    </View>
   );
 }

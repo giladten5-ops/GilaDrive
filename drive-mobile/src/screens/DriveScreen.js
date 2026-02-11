@@ -238,16 +238,33 @@ export default function DriveScreen() {
 
   const handleToggleStar = async (file) => {
     const nextStarred = !file.isStarred;
-    setItems(prev => prev.map(f => f.id === file.id ? { ...f, isStarred: nextStarred } : f));
+    // Optimistically update the file list
+    setItems((prev) =>
+      prev.map((f) => (f.id === file.id ? { ...f, isStarred: nextStarred } : f))
+    );
+    // Optimistically update the 'selected' file so the modal re-renders immediately
+    setSelected((prev) =>
+      prev?.id === file.id ? { ...prev, isStarred: nextStarred } : prev
+    );
+
     try {
-      if (nextStarred) await starFile(file.id);
-      else await unstarFile(file.id);
-      refresh();
+      if (nextStarred) {
+        await starFile(file.id);
+      } else {
+        await unstarFile(file.id);
+      }
+
     } catch (e) {
-      setItems(prev => prev.map(f => f.id === file.id ? { ...f, isStarred: !nextStarred } : f));
+      // revert both states if the API call fails
+      setItems((prev) =>
+        prev.map((f) => (f.id === file.id ? { ...f, isStarred: !nextStarred } : f))
+      );
+      setSelected((prev) =>
+        prev?.id === file.id ? { ...prev, isStarred: !nextStarred } : prev
+      );
       Alert.alert(
         "Error",
-        `Could not ${nextStarred ? 'star' : 'unstar'} the file. Please try again.`
+        `Could not ${nextStarred ? "star" : "unstar"} the file. Please try again.`
       );
     }
   };
