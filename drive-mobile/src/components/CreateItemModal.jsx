@@ -19,7 +19,6 @@ export default function CreateItemModal({ visible, onClose, onSelectAction }) {
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
       paddingTop: 12,
-      paddingBottom: insets.bottom,
       width: "100%",
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -73,11 +72,16 @@ export default function CreateItemModal({ visible, onClose, onSelectAction }) {
   ];
 
   return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
+    <Modal transparent visible={visible} 
+    animationType="slide" 
+    onRequestClose={onClose} 
+    supportedOrientations={['portrait', 'landscape']}>
+
       <Pressable style={styles.overlay} onPress={onClose}>
         <SafeAreaView
           edges={['left', 'right', 'bottom']}
-          style={styles.sheet}>
+          style={styles.sheet}
+          >
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
 
             <View style={styles.dragHandle} />
