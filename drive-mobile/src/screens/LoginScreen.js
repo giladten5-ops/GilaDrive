@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Text, Button, View, TextInput } from "react-native";
+import { Text, Button, View, TextInput, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { loginUser, setToken } from "../api/api"; // adjust path if needed
 import { useAuth } from "../auth/AuthContext";
@@ -53,58 +53,60 @@ export default function Login({ goHome, onLoggedIn }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: colors.bg }}>
-      <Text style={{ fontSize: 24, marginBottom: 16, color: colors.text }}>Login</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: colors.bg }}>
+        <Text style={{ fontSize: 24, marginBottom: 16, color: colors.text }}>Login</Text>
 
-      {/* Input for the username. autoCapitalize is off because usernames are usually lowercase. */}
-      <TextInput
-        value={username}
-        onChangeText={setUsername}
-        placeholder="username"
-        autoCapitalize="none"
-        placeholderTextColor={colors.muted}
-        style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.surface,
-          color: colors.text,
-          padding: 10,
-          borderRadius: 8,
-          marginBottom: 12,
-        }}
-      />
+        {/* Input for the username. autoCapitalize is off because usernames are usually lowercase. */}
+        <TextInput
+          value={username}
+          onChangeText={setUsername}
+          placeholder="username"
+          autoCapitalize="none"
+          placeholderTextColor={colors.muted}
+          style={{
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+            padding: 10,
+            borderRadius: 8,
+            marginBottom: 12,
+          }}
+        />
 
-      {/* Input for the password. secureTextEntry masks the text for privacy. */}
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="password"
-        secureTextEntry
-        placeholderTextColor={colors.muted}
-        style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.surface,
-          color: colors.text,
-          padding: 10,
-          borderRadius: 8,
-          marginBottom: 12,
-        }}
-      />
+        {/* Input for the password. secureTextEntry masks the text for privacy. */}
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="password"
+          secureTextEntry
+          placeholderTextColor={colors.muted}
+          style={{
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            color: colors.text,
+            padding: 10,
+            borderRadius: 8,
+            marginBottom: 12,
+          }}
+        />
 
-      {/* If 'err' has a value, we render a red error message. Otherwise, we render nothing. */}
-      {err ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{err}</Text> : null}
+        {/* If 'err' has a value, we render a red error message. Otherwise, we render nothing. */}
+        {err ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{err}</Text> : null}
 
-      {/* We disable the button when loading=true to prevent the user from clicking 10 times. */}
-      <Button
-        title={loading ? "Logging in..." : "Login"}
-        onPress={doLogin}
-        disabled={loading}
-      />
+        {/* We disable the button when loading=true to prevent the user from clicking 10 times. */}
+        <Button
+          title={loading ? "Logging in..." : "Login"}
+          onPress={doLogin}
+          disabled={loading}
+        />
 
-      <View style={{ height: 12 }} />
-      {/* Simple navigation callback to go back to the previous (Home) screen. */}
-      <Button title="Back to Home" onPress={goHome} />
-    </SafeAreaView>
+        <View style={{ height: 12 }} />
+        {/* Simple navigation callback to go back to the previous (Home) screen. */}
+        <Button title="Back to Home" onPress={goHome} />
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }

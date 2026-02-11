@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, radius } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
 
@@ -73,42 +74,50 @@ export default function PromptModal({
     btnPrimaryText: { color: "#fff" },
   });
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+      supportedOrientations={['portrait', 'landscape']}
+    >
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
-              style={styles.sheet}
-            >
-              <Text style={styles.title}>{title}</Text>
-              {label ? <Text style={styles.label}>{label}</Text> : null}
+            <SafeAreaView edges={['bottom', 'left', 'right']}>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={styles.sheet}
+              >
+                <Text style={styles.title}>{title}</Text>
+                {label ? <Text style={styles.label}>{label}</Text> : null}
 
-              <TextInput
-                value={value}
-                onChangeText={onChangeValue}
-                placeholder={placeholder}
-                placeholderTextColor={colors.muted}
-                style={[styles.input, multiline && styles.inputMultiline]}
-                autoCapitalize="none"
-                secureTextEntry={secureTextEntry}
-                keyboardType={keyboardType}
-                multiline={multiline}
-              />
+                <TextInput
+                  value={value}
+                  onChangeText={onChangeValue}
+                  placeholder={placeholder}
+                  placeholderTextColor={colors.muted}
+                  style={[styles.input, multiline && styles.inputMultiline]}
+                  autoCapitalize="none"
+                  secureTextEntry={secureTextEntry}
+                  keyboardType={keyboardType}
+                  multiline={multiline}
+                />
 
-              <View style={styles.row}>
-                <Pressable onPress={onCancel} style={styles.btn}>
-                  <Text style={styles.btnText}>{cancelText}</Text>
-                </Pressable>
-                <Pressable
-                  onPress={onConfirm}
-                  style={[styles.btn, styles.btnPrimary]}
-                  disabled={!onConfirm}
-                >
-                  <Text style={[styles.btnText, styles.btnPrimaryText]}>{confirmText}</Text>
-                </Pressable>
-              </View>
-            </KeyboardAvoidingView>
+                <View style={styles.row}>
+                  <Pressable onPress={onCancel} style={styles.btn}>
+                    <Text style={styles.btnText}>{cancelText}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={onConfirm}
+                    style={[styles.btn, styles.btnPrimary]}
+                    disabled={!onConfirm}
+                  >
+                    <Text style={[styles.btnText, styles.btnPrimaryText]}>{confirmText}</Text>
+                  </Pressable>
+                </View>
+              </KeyboardAvoidingView>
+            </SafeAreaView>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>

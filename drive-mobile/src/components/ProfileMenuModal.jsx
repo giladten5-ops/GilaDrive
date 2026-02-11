@@ -1,4 +1,5 @@
 import { Modal, View, Text, Pressable, StyleSheet, Image, TouchableWithoutFeedback } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, radius } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
 
@@ -59,11 +60,17 @@ export default function ProfileMenuModal({ visible, user, onClose, onViewPhoto, 
   });
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}
+    >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.sheet}>
+            <SafeAreaView style={styles.sheet} edges={['bottom', 'left', 'right']}>
               <View style={styles.header}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarImg} />
@@ -90,7 +97,7 @@ export default function ProfileMenuModal({ visible, user, onClose, onViewPhoto, 
               <Pressable style={[styles.item, styles.logout]} onPress={onLogout}>
                 <Text style={styles.logoutText}>Log out</Text>
               </Pressable>
-            </View>
+            </SafeAreaView>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>

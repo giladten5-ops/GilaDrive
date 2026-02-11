@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Modal, View, Text, Pressable, StyleSheet, TextInput } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, radius } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
 
@@ -83,8 +84,14 @@ export default function ShareModal({ visible, file, onClose, onShare }) {
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}
+    >
+      <SafeAreaView style={styles.overlay} edges={['bottom', 'left', 'right']}>
         <View style={styles.sheet}>
           <Text style={styles.title} numberOfLines={1}>
             Share "{file?.name ?? "item"}"
@@ -131,7 +138,7 @@ export default function ShareModal({ visible, file, onClose, onShare }) {
             </Pressable>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

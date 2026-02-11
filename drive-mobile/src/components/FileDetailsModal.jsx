@@ -85,7 +85,7 @@ export default function FileDetailsModal({
   });
 
   return (
-    <Modal visible={open} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={open} animationType="slide" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <SafeAreaView style={styles.root}>
         <View style={styles.root}>
           {/* Header */}
