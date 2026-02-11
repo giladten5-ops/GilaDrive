@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { listFiles } from "../api/api";
 import { spacing, radius } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
@@ -41,7 +42,11 @@ export default function MovePickerModal({ visible, file, onClose, onMove }) {
       setLoading(true);
       try {
         const data = await listFiles(filters);
-        const onlyFolders = (Array.isArray(data) ? data : []).filter((i) => i.type === "folder");
+        let onlyFolders = (Array.isArray(data) ? data : []).filter((i) => i.type === "folder");
+        // Exclude the folder being moved (if moving a folder)
+        if (file && file.type === "folder" && file.id) {
+          onlyFolders = onlyFolders.filter((f) => String(f.id) !== String(file.id));
+        }
         if (!cancelled) setFolders(onlyFolders);
       } catch (e) {
         if (!cancelled) setErr(e.message || "Failed to load folders");
@@ -116,8 +121,13 @@ export default function MovePickerModal({ visible, file, onClose, onMove }) {
 
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.root}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}
+    >
+      <SafeAreaView style={styles.root} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.header}>
           <Pressable onPress={onClose} hitSlop={10} style={styles.headerBtn}>
             <Text style={styles.headerBtnText}>Close</Text>
@@ -189,7 +199,7 @@ export default function MovePickerModal({ visible, file, onClose, onMove }) {
             <Text style={styles.moveText}>Move here</Text>
           </Pressable>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
