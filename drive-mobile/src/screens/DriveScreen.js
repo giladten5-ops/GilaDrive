@@ -9,6 +9,7 @@ import {
   Alert,
   InteractionManager,
   AsyncStorage,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,6 +53,7 @@ export default function DriveScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
   const { logout, user, setUser } = useAuth();
+  const { width } = useWindowDimensions();
 
   // --- State ---
   const [activeView, setActiveView] = useState("home");
@@ -93,6 +95,9 @@ export default function DriveScreen() {
   const [moveFile, setMoveFile] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profilePhotoOpen, setProfilePhotoOpen] = useState(false);
+
+  const numColumns = width > 600 ? Math.floor(width / 200) : 2;
+
   const avatarInitial = useMemo(() => {
     const label = (user?.name || user?.username || "").trim();
     return label ? label[0].toUpperCase() : "U";
@@ -150,7 +155,7 @@ export default function DriveScreen() {
     };
     loadViewMode();
   }, []);
-  
+
   //save view mode to async storage when it changes
   useEffect(() => {
     const saveViewMode = async () => {
@@ -603,9 +608,14 @@ export default function DriveScreen() {
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
         <FlatList
+          key={viewMode === "grid" ? `grid-${numColumns}` : "list"}
           data={items}
+          numColumns={viewMode === "grid" ? numColumns : 1}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: Math.max(140, insets.bottom + 80) }}
+          contentContainerStyle={{
+            paddingBottom: Math.max(140, insets.bottom + 80),
+            paddingHorizontal: viewMode === "grid" ? 8 : 0
+          }}
           renderItem={({ item }) => (
             viewMode === "grid"
               ? <FileCard item={item} onMenuPress={setMenuFile} onPress={openItem} />
