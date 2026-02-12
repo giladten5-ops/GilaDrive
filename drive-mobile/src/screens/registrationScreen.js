@@ -14,6 +14,7 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [imageErr, setImageErr] = useState("");
+  const [passwordVerify, setPasswordVerify] = useState("");
   
   // Feedback state for errors and network activity
   const [err, setErr] = useState("");
@@ -21,8 +22,11 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
 
   async function handleRegister() {
     // Basic "Front-end" validation to prevent unnecessary API calls
-    if (!name || !username || !password) {
+    if (!name || !username || !password || !passwordVerify) {
       return setErr("Please fill in all fields");
+    }
+    if (password !== passwordVerify) {
+      return setErr("Passwords do not match");
     }
 
     setErr("");
@@ -137,6 +141,14 @@ export default function RegisterScreen({ goLogin, onRegistered }) {
           value={password}
           onChangeText={setPassword}
           placeholder="Password"
+          secureTextEntry
+          placeholderTextColor={colors.muted}
+          style={styles.input}
+        />
+        <TextInput
+          value={passwordVerify}
+          onChangeText={setPasswordVerify}
+          placeholder="Verify Password"
           secureTextEntry
           placeholderTextColor={colors.muted}
           style={styles.input}

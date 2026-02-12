@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MAIN SERVER
   server:
@@ -74,6 +72,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
     container_name: react_frontend
     ports:
       - "3001:3001"
@@ -93,5 +93,19 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  # DRIVE MOBILE (Expo React Native)
+  drive_mobile:
+    build:
+      context: ./drive-mobile
+      dockerfile: Dockerfile
+    container_name: drive_mobile
+    ports:
+      - "8081:8081"
+    environment:
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+      - EXPO_PUBLIC_API_BASE=http://MY_IP:3000
+    stdin_open: true
+    tty: true
+
 volumes:
-    mongo_data: {}
+  mongo_data: {}
