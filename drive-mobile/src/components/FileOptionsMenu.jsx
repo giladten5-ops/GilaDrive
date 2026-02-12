@@ -1,5 +1,7 @@
 import { Modal, View, Text, Pressable, StyleSheet, TouchableWithoutFeedback } from "react-native";
 import { useTheme } from "../ui/theme";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
 
 export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
   const { colors } = useTheme();
@@ -35,9 +37,13 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
       backgroundColor: colors.bg,
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
-      paddingBottom: 40,
       borderWidth: 1,
       borderColor: colors.border,
+      // Remove fixed paddingBottom, let SafeAreaView handle it
+      paddingBottom: 0,
+      alignSelf: 'stretch',
+      // Only take the height needed by content
+      maxHeight: '90%',
     },
     handle: {
       width: 32,
@@ -50,27 +56,32 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
     header: { flexDirection: 'row', alignItems: 'center', padding: 24 },
     fileName: { fontSize: 16, fontWeight: '500', color: colors.text, flex: 1 },
     divider: { height: 1, backgroundColor: colors.border, marginBottom: 8 },
+    optionsList: {
+      flexGrow: 0,
+      flexShrink: 1,
+      justifyContent: 'flex-end',
+    },
     optionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24 },
     pressed: { backgroundColor: 'rgba(0,0,0,0.05)' },
     optionLabel: { fontSize: 16, color: colors.text },
   });
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.sheet}>
-              <View style={styles.handle} />
-
-              <View style={styles.header}>
-                <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-              </View>
-
-              <View style={styles.divider} />
-
+          <SafeAreaView
+            edges={['left', 'right', 'bottom']}
+            style={styles.sheet}
+          >
+            <View style={styles.handle} />
+            <View style={styles.header}>
+              <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.optionsList}>
               {options.map((opt) => (
-                <Pressable 
-                  key={opt.id} 
+                <Pressable
+                  key={opt.id}
                   style={({ pressed }) => [styles.optionRow, pressed && styles.pressed]}
                   onPress={() => {
                     onAction(opt.id, file);
@@ -83,7 +94,7 @@ export default function FileOptionsMenu({ visible, file, onClose, onAction }) {
                 </Pressable>
               ))}
             </View>
-          </TouchableWithoutFeedback>
+          </SafeAreaView>
         </View>
       </TouchableWithoutFeedback>
     </Modal>

@@ -14,13 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
-  // const isDev = process.env.NODE_ENV !== "production";
-  // const devUser = {
-  //   username: "dev",
-  //   name: "Dev User",
-  //   image: "",
-  //   password: "devpass123",
-  // };
+
 
   const clearAuth = () => {
     sessionStorage.removeItem("token");
@@ -94,40 +88,6 @@ export default function LoginPage() {
     }
   }
 
-  // async function handleDevLogin() {
-  //   setError("");
-  //   setOk("");
-  //   clearAuth();
-  //   setLoading(true);
-  //   try {
-  //     const data = await loginUser({
-  //       username: devUser.username,
-  //       password: devUser.password,
-  //     });
-  //     saveAuth(data);
-  //     navigate("/drive");
-  //     return;
-  //   } catch (err) {
-  //     try {
-  //       await registerUser(devUser);
-  //     } catch (registerErr) {
-  //       setError(registerErr?.message || err?.message || "Dev login failed");
-  //       return;
-  //     }
-  //     try {
-  //       const data = await loginUser({
-  //         username: devUser.username,
-  //         password: devUser.password,
-  //       });
-  //       saveAuth(data);
-  //       navigate("/drive");
-  //     } catch (loginErr) {
-  //       setError(loginErr?.message || "Dev login failed");
-  //     }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
   // Render login form with error/success messages
   return (
     <div className="gd-auth-bg">
@@ -166,15 +126,6 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {/* {isDev && (
-        <button
-          className="btn btn-outline-secondary w-100 gd-btn gd-btn-dev"
-          type="button"
-          onClick={handleDevLogin}
-        >
-          Enter Drive without login (temporaraly for development)
-        </button>
-      )} */}
 
       <div className="gd-footer">
         No account? No problemo! <Link to="/register">Create one</Link>

@@ -1,6 +1,6 @@
 // src/components/CreateItemModal.jsx
 import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { FolderPlus, FileText, Upload, Camera, X } from "lucide-react-native";
 import { useTheme } from "../ui/theme";
 
@@ -19,7 +19,6 @@ export default function CreateItemModal({ visible, onClose, onSelectAction }) {
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
       paddingTop: 12,
-      paddingBottom: insets.bottom,
       width: "100%",
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -73,38 +72,48 @@ export default function CreateItemModal({ visible, onClose, onSelectAction }) {
   ];
 
   return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal transparent visible={visible} 
+    animationType="slide" 
+    onRequestClose={onClose} 
+    supportedOrientations={['portrait', 'landscape']}>
+
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.dragHandle} />
+        <SafeAreaView
+          edges={['left', 'right', 'bottom']}
+          style={styles.sheet}
+          >
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Something New</Text>
-            <Pressable onPress={onClose}><X color={colors.muted} size={20} /></Pressable>
-          </View>
+            <View style={styles.dragHandle} />
 
-          <View style={styles.list}>
-            {actions.map((act) => (
-              <Pressable
-                key={act.id}
-                style={({ pressed }) => [
-                  styles.item,
-                  { backgroundColor: pressed ? "rgba(255,255,255,0.05)" : "transparent" }
-                ]}
-                onPress={() => {
-                  onClose();
-                  onSelectAction(act.id);
-                }}
-              >
-                <View style={styles.iconWrap}>
-                  <act.Icon color={colors.text} size={24} />
-                </View>
-                <Text style={styles.itemLabel}>{act.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
+            <View style={styles.header}>
+              <Text style={styles.title}>Create Something New</Text>
+              <Pressable onPress={onClose}><X color={colors.muted} size={20} /></Pressable>
+            </View>
+
+            <View style={styles.list}>
+              {actions.map((act) => (
+                <Pressable
+                  key={act.id}
+                  style={({ pressed }) => [
+                    styles.item,
+                    { backgroundColor: pressed ? "rgba(255,255,255,0.05)" : "transparent" }
+                  ]}
+                  onPress={() => {
+                    onClose();
+                    onSelectAction(act.id);
+                  }}
+                >
+                  <View style={styles.iconWrap}>
+                    <act.Icon color={colors.text} size={24} />
+                  </View>
+                  <Text style={styles.itemLabel}>{act.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </Pressable>
+        </SafeAreaView>
       </Pressable>
-    </Modal>
+    </Modal >
   );
 }

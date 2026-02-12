@@ -1,5 +1,6 @@
 // src/components/TextEditorModal.js
 import { Modal, View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../ui/theme";
 
 export default function TextEditorModal({
@@ -37,37 +38,44 @@ export default function TextEditorModal({
     },
   });
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"} 
-        style={styles.container}
-      >
-        {/* Cute Header */}
-        <View style={styles.header}>
-          <Pressable onPress={onClose} hitSlop={10}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-          <Text style={styles.title} numberOfLines={1}>{fileName}</Text>
-          <Pressable onPress={onSave} disabled={isSaving}>
-            <Text style={[styles.saveText, isSaving && { opacity: 0.5 }]}>
-              {isSaving ? "..." : "Save"}
-            </Text>
-          </Pressable>
-        </View>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      supportedOrientations={['portrait', 'landscape']}
+    >
+      <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"} 
+          style={{ flex: 1 }}
+        >
+          {/* Cute Header */}
+          <View style={styles.header}>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+            <Text style={styles.title} numberOfLines={1}>{fileName}</Text>
+            <Pressable onPress={onSave} disabled={isSaving}>
+              <Text style={[styles.saveText, isSaving && { opacity: 0.5 }]}> 
+                {isSaving ? "..." : "Save"}
+              </Text>
+            </Pressable>
+          </View>
 
-        {/* Text Area */}
-        <TextInput
-          style={styles.input}
-          multiline
-          value={value}
-          onChangeText={onChange}
-          autoFocus
-          placeholder="Start typing your magic..."
-          placeholderTextColor={colors.muted}
-          spellCheck={false}
-          autoCapitalize="none"
-        />
-      </KeyboardAvoidingView>
+          {/* Text Area */}
+          <TextInput
+            style={styles.input}
+            multiline
+            value={value}
+            onChangeText={onChange}
+            autoFocus
+            placeholder="Start typing your magic..."
+            placeholderTextColor={colors.muted}
+            spellCheck={false}
+            autoCapitalize="none"
+          />
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 }

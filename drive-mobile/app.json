@@ -3,7 +3,7 @@
     "name": "Benny's squad drive",
     "slug": "Benny's-squad-drive",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "drivemobile",
     "userInterfaceStyle": "automatic",

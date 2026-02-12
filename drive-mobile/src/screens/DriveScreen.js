@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Alert,
   InteractionManager,
+  AsyncStorage,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -51,12 +53,13 @@ export default function DriveScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
   const { logout, user, setUser } = useAuth();
+  const { width } = useWindowDimensions();
 
   // --- State ---
   const [activeView, setActiveView] = useState("home");
   const [parentId, setParentId] = useState(null);
   const [crumbs, setCrumbs] = useState([{ id: null, name: "My Drive" }]);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -92,6 +95,9 @@ export default function DriveScreen() {
   const [moveFile, setMoveFile] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profilePhotoOpen, setProfilePhotoOpen] = useState(false);
+
+  const numColumns = width > 600 ? Math.floor(width / 200) : 2;
+
   const avatarInitial = useMemo(() => {
     const label = (user?.name || user?.username || "").trim();
     return label ? label[0].toUpperCase() : "U";
@@ -137,9 +143,30 @@ export default function DriveScreen() {
     refresh();
   }, [activeView, parentId]);
 
+  // Load viewMode from AsyncStorage on mount
   useEffect(() => {
-    setViewMode("grid");
-  }, [activeView]);
+    const loadViewMode = async () => {
+      try {
+        const saved = await AsyncStorage.getItem("viewMode");
+        if (saved) setViewMode(saved);
+      } catch (e) {
+        console.log("Error loading viewMode:", e);
+      }
+    };
+    loadViewMode();
+  }, []);
+
+  //save view mode to async storage when it changes
+  useEffect(() => {
+    const saveViewMode = async () => {
+      try {
+        await AsyncStorage.setItem("viewMode", viewMode);
+      } catch (e) {
+        console.log("Error saving viewMode:", e);
+      }
+    };
+    saveViewMode();
+  }, [viewMode]);
 
   function setView(nextView) {
     setActiveView(nextView);
@@ -211,16 +238,33 @@ export default function DriveScreen() {
 
   const handleToggleStar = async (file) => {
     const nextStarred = !file.isStarred;
-    setItems(prev => prev.map(f => f.id === file.id ? { ...f, isStarred: nextStarred } : f));
+    // Optimistically update the file list
+    setItems((prev) =>
+      prev.map((f) => (f.id === file.id ? { ...f, isStarred: nextStarred } : f))
+    );
+    // Optimistically update the 'selected' file so the modal re-renders immediately
+    setSelected((prev) =>
+      prev?.id === file.id ? { ...prev, isStarred: nextStarred } : prev
+    );
+
     try {
-      if (nextStarred) await starFile(file.id);
-      else await unstarFile(file.id);
-      refresh();
+      if (nextStarred) {
+        await starFile(file.id);
+      } else {
+        await unstarFile(file.id);
+      }
+
     } catch (e) {
-      setItems(prev => prev.map(f => f.id === file.id ? { ...f, isStarred: !nextStarred } : f));
+      // revert both states if the API call fails
+      setItems((prev) =>
+        prev.map((f) => (f.id === file.id ? { ...f, isStarred: !nextStarred } : f))
+      );
+      setSelected((prev) =>
+        prev?.id === file.id ? { ...prev, isStarred: !nextStarred } : prev
+      );
       Alert.alert(
         "Error",
-        `Could not ${nextStarred ? 'star' : 'unstar'} the file. Please try again.`
+        `Could not ${nextStarred ? "star" : "unstar"} the file. Please try again.`
       );
     }
   };
@@ -532,7 +576,7 @@ export default function DriveScreen() {
           type: file.type,
           parentId: normalizedParentId
         };
-        
+
         await uploadFile(payload);
         refresh();
 
@@ -566,6 +610,8 @@ export default function DriveScreen() {
         avatarInitial={avatarInitial}
       />
 
+      <SectionHeader title={searchMode ? "Search Results" : "Files"} viewMode={viewMode} onToggleView={setViewMode} />
+
       {crumbs.length > 1 && (
         <View style={styles.crumbsWrap}>
           <Breadcrumbs crumbs={crumbs} onCrumbPress={(idx) => {
@@ -575,15 +621,18 @@ export default function DriveScreen() {
         </View>
       )}
 
-      <SectionHeader title={searchMode ? "Search Results" : "Files"} viewMode={viewMode} onToggleView={setViewMode} />
-
       {loading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
         <FlatList
+          key={viewMode === "grid" ? `grid-${numColumns}` : "list"}
           data={items}
+          numColumns={viewMode === "grid" ? numColumns : 1}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: Math.max(140, insets.bottom + 80) }}
+          contentContainerStyle={{
+            paddingBottom: Math.max(140, insets.bottom + 80),
+            paddingHorizontal: viewMode === "grid" ? 8 : 0
+          }}
           renderItem={({ item }) => (
             viewMode === "grid"
               ? <FileCard item={item} onMenuPress={setMenuFile} onPress={openItem} />

@@ -1,4 +1,5 @@
 import { Modal, View, Text, Pressable, StyleSheet, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, radius } from "../ui/tokens";
 import { useTheme } from "../ui/theme";
 
@@ -53,8 +54,14 @@ export default function ProfilePhotoModal({ visible, user, onClose }) {
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}
+    >
+      <SafeAreaView style={styles.overlay} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.card}>
           <Text style={styles.title}>Profile picture</Text>
           <View style={styles.photoWrap}>
@@ -71,7 +78,7 @@ export default function ProfilePhotoModal({ visible, user, onClose }) {
             <Text style={styles.closeText}>Close</Text>
           </Pressable>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
