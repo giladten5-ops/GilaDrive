@@ -8,7 +8,8 @@ This page demonstrates the core functionality of the system, showing how files a
 ### 1. Creating Content
 
 The system allows users to create new folders and upload/create files. These actions are performed through the Node.js Web Server and persisted in the C++ backend.
-![new item](./imagesProof/create_on_browser.png) ![creation options](./imagesProof/creation_options.png)
+![new item](./imagesProof/create_on_browser.png) 
+![creation options](./imagesProof/creation_options.png)
 ![new item on mobile](./imagesProof/mobile_new_items.png) ![creation options - mobile](./imagesProof/mobile_create_options.png)
 
 * 
