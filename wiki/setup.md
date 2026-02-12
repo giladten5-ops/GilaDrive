@@ -12,6 +12,7 @@ To allow the **Expo Go** app to communicate with the servers, you must provide y
 * Open `docker-compose.yml` in the root directory.
 * Locate the `drive_mobile` service.
 * Update the `MY_IP` environment variable with your local network IP (ipconfig in cmd for windows).
+![alt text](./imagesProof/where_do_I_put_my_ip.png)
 
 ### 2. Build the System
 
@@ -53,6 +54,8 @@ To run the C++ Client:
 
 ```Bash
 docker compose run client_cpp
+
+
 To run the Python Client:
 ```
 
@@ -64,6 +67,8 @@ To run the Backend Tests:
 ```Bash
 docker compose run tests
 ```
+Or alternativly just go to the Docker Desktop app and press the play buttons on the wanted service:
+![alt text](./imagesProof/how_do_i_run_the_rest.png)
 
 ---
 
