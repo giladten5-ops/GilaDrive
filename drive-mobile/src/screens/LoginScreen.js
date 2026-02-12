@@ -5,7 +5,7 @@ import { loginUser, setToken } from "../api/api"; // adjust path if needed
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../ui/theme";
 
-export default function Login({ goHome, onLoggedIn }) {
+export default function Login({ goRegister, onLoggedIn }) {
   const { colors } = useTheme();
   const { setUser } = useAuth();
   // We use local state to 'control' the inputs. 
@@ -55,7 +55,7 @@ export default function Login({ goHome, onLoggedIn }) {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <SafeAreaView style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: colors.bg }}>
-        <Text style={{ fontSize: 24, marginBottom: 16, color: colors.text }}>Login</Text>
+        <Text style={{ fontSize: 24, marginBottom: 16, color: colors.text, textAlign: "center" }}>Login</Text>
 
         {/* Input for the username. autoCapitalize is off because usernames are usually lowercase. */}
         <TextInput
@@ -105,7 +105,10 @@ export default function Login({ goHome, onLoggedIn }) {
 
         <View style={{ height: 12 }} />
         {/* Simple navigation callback to go back to the previous (Home) screen. */}
-        <Button title="Back to Home" onPress={goHome} />
+        <Button
+          title="No accounto? No problemo! Register here"
+          onPress={goRegister}
+        />
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );

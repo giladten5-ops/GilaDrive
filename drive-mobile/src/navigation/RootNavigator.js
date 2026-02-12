@@ -33,25 +33,13 @@ export default function RootNavigator() {
       */}
       {!isAuthed ? (
         <>
-          {/* HOME: The starting point for guests */}
-          <Stack.Screen name="Home" options={{ title: "Home" }}>
-            {(props) => (
-              <HomeScreen
-                {...props}
-                onGoLogin={() => props.navigation.navigate("Login")}
-                onGoRegister={() => props.navigation.navigate("Register")}
-              />
-            )}
-          </Stack.Screen>
 
-          {/* LOGIN: Where existing users authenticate */}
+          {/* LOGIN: The starting point for guests */}
           <Stack.Screen name="Login" options={{ title: "Login" }}>
             {(props) => (
               <LoginScreen
                 {...props}
-                goHome={() => props.navigation.navigate("Home")}
-                // When login succeeds, we call setAuthed(true) which triggers a re-render
-                // and switches us to the 'else' block below.
+                goRegister={() => props.navigation.navigate("Register")}
                 onLoggedIn={() => setAuthed(true)}
               />
             )}
