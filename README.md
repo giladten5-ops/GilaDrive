@@ -52,7 +52,7 @@ Builds and starts:
 - React frontend on `localhost:3001`
 
 ```bash
-docker-compose up --build server webserver frontend
+docker-compose up --build server webserver frontend drive_mobile
 ```
 
 **2. Open the app**
