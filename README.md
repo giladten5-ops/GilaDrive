@@ -39,7 +39,9 @@ For detailed explanations, screenshots of user flows, and input validation demon
 
 ## Authors:
 Benny Bitran (scrum master and team leader ;)
+
 Gilad Tenenbaum
+
 Ilya vladimirskiy
 
 it was a pleasure.
