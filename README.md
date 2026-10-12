@@ -38,11 +38,12 @@ To bring up the main environment:
 For detailed explanations, screenshots of user flows, and input validation demonstrations, please refer to the **`wiki/`** folder in this repository.
 
 ## Authors:
-Benny Bitran (scrum master and team leader ;)
+Benny Bitran 
+
+Ilya vladimirskiy
 
 Gilad Tenenbaum
 
-Ilya vladimirskiy
 
 it was a pleasure.
 ---
